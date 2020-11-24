@@ -142,14 +142,14 @@ def range_from_zscale(input_arr, contrast = 1.0, sig_fract = 3.0, percent_fract 
 	max_ind = len(work_arr) - 1
 	midpoint_ind = int(len(work_arr)*0.5)
 	I_midpoint = work_arr[midpoint_ind]
-	print( ".. midpoint index ", midpoint_ind, " I_midpoint ", I_midpoint )
+	print(".. midpoint index ", midpoint_ind, " I_midpoint ", I_midpoint)
 	# initial estimation of the slope
 	x = numpy.array(range(0, len(work_arr))) - midpoint_ind
 	y = numpy.array(work_arr)
 	temp = numpy.vstack([x, numpy.ones(len(x))]).T
 	slope, intercept = numpy.linalg.lstsq(temp, y)[0]
 	old_slope = slope
-	print( "... slope & intercept ", old_slope, " ", intercept ) 
+	print("... slope & intercept ", old_slope, " ", intercept)
 	# initial clipping
 	sig = y.std()
 	upper_limit = I_midpoint + sig_fract * sig
@@ -167,7 +167,7 @@ def range_from_zscale(input_arr, contrast = 1.0, sig_fract = 3.0, percent_fract 
 	temp = numpy.vstack([x, numpy.ones(len(x))]).T
 	slope, intercept = numpy.linalg.lstsq(temp, y)[0]
 	new_slope = slope
-	print( "... slope & intercept ", new_slope, " ", intercept ) 
+	print("... slope & intercept ", new_slope, " ", intercept)
 	iteration = 1
 	# to run the iteration, we need more than 50% of the original input array
 	while (((math.fabs(old_slope - new_slope)/new_slope) > percent_fract) and (iteration < max_iter)) and (len(y) >= midpoint_ind) :
@@ -190,7 +190,7 @@ def range_from_zscale(input_arr, contrast = 1.0, sig_fract = 3.0, percent_fract 
 		temp = numpy.vstack([x, numpy.ones(len(x))]).T
 		slope, intercept = numpy.linalg.lstsq(temp, y)[0]
 		new_slope = slope
-		print( "... slope & intercept ", new_slope, " ", intercept ) 
+		print("... slope & intercept ", new_slope, " ", intercept)
 
 	z1 = I_midpoint + (new_slope / contrast) * (0 - midpoint_ind)
 	z2 = I_midpoint + (new_slope / contrast) * (max_ind - midpoint_ind)
@@ -277,7 +277,7 @@ def linear(inputArray, scale_min=None, scale_max=None):
 	@return: image data array
 	
 	"""		
-	print( "img_scale : linear" )
+	print("img_scale : linear")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:
@@ -307,7 +307,7 @@ def sqrt(inputArray, scale_min=None, scale_max=None):
 	
 	"""		
     
-	print( "img_scale : sqrt" )
+	print("img_scale : sqrt")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:
@@ -339,7 +339,7 @@ def log(inputArray, scale_min=None, scale_max=None):
 	
 	"""		
     
-	print( "img_scale : log" )
+	print("img_scale : log")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:
@@ -355,7 +355,7 @@ def log(inputArray, scale_min=None, scale_max=None):
 	try :
 		imageData[indices1] = numpy.log10(imageData[indices1])/factor
 	except :
-		print( "Error on math.log10 for ", (imageData[i][j] - scale_min) )
+		print("Error on math.log10 for ", (imageData[i][j] - scale_min))
 
 	return imageData
 
@@ -376,7 +376,7 @@ def power(inputArray, power_index=3.0, scale_min=None, scale_max=None):
 	
 	"""		
     
-	print( "img_scale : power" )
+	print("img_scale : power")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:
@@ -410,7 +410,7 @@ def asinh(inputArray, scale_min=None, scale_max=None, non_linear=2.0):
 	
 	"""		
     
-	print( "img_scale : asinh" )
+	print("img_scale : asinh")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:
@@ -446,7 +446,7 @@ def logistic(inputArray, scale_min=None, scale_max=None, center=0.5, slope=1.0):
 	
 	"""		
     
-	print( "img_scale : logistic" )
+	print("img_scale : logistic")
 	imageData=numpy.array(inputArray, copy=True)
 	
 	if scale_min == None:
