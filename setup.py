@@ -21,8 +21,6 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/Hoseung/astroBF',
     classifiers=['Programming Language :: Python :: 3'],
-    package_dir={'': 'src'},
-    packages=find_packages(where='src'),
     python_requires='>=3.7',
     install_requires=['numpy', 'scikit-image', 'astropy'],
     extras_require={'dev':[''],
