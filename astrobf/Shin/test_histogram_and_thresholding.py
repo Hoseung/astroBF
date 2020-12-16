@@ -21,7 +21,7 @@ from sklearn import mixture
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ..utils.gmm import *
+from astrobf.utils.gmm import *
 
 # some parameters
 max_n_comp = 30
@@ -32,7 +32,7 @@ range_cut_max = 95.0
 num_sample_x = 3000
 
 # Load image
-fits_fn = "../example_data/J000311.00+155754.0-i.fits"
+fits_fn = "../../example_data/J000311.00+155754.0-i.fits"
 hdulist = fits.open(fits_fn)
 img_header = hdulist[0].header
 img_data = hdulist[0].data
