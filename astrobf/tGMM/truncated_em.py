@@ -10,9 +10,9 @@ from numpy import matlib
 from scipy.stats import mvn, norm
 from scipy.stats import multivariate_normal
 
-from censored_data_utils import find_censoring_pattern
-from likelihood_estimation import estimate_truncated_censored_loglikelihood
-from moments_estimation import compute_multivariate_first_moment, \
+from .censored_data_utils import find_censoring_pattern
+from .likelihood_estimation import estimate_truncated_censored_loglikelihood
+from .moments_estimation import compute_multivariate_first_moment, \
     compute_multivariate_second_moment
 
         

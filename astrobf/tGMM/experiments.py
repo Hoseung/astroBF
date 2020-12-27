@@ -17,12 +17,12 @@ import seaborn as sns
 
 from sklearn import mixture
 
-from censored_data_utils import censor_and_truncate_data
-from visualization import plot_gmm_data
-from parameters_initialization import init_kmeans
-from standard_em import perform_standard_em
-from truncated_em import perform_truncated_em
-from gmm_dataset import generate_gmm_data, build_GMM_model,\
+from .censored_data_utils import censor_and_truncate_data
+from .visualization import plot_gmm_data
+from .parameters_initialization import init_kmeans
+from .standard_em import perform_standard_em
+from .truncated_em import perform_truncated_em
+from .gmm_dataset import generate_gmm_data, build_GMM_model,\
      estimate_kl_divergence_gmm, reorder_gmm_compoments
 
 if not sys.warnoptions:
