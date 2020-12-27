@@ -44,6 +44,42 @@ def generate_gmm_data(pi, mu, sigma, N):
     return x
 
 
+def generate_gmm_data_1D(pi, mu, sigma, N):
+    """Generate synthetic data based on Gaussian Mixture Model (GMM).
+    
+    Args:
+        pi (1D numpy array): The mixing weights.
+        mu (1D numpy array): The means of Gaussian components.
+        sigma (1D numpy array): The covariance matrices of Gaussian components.
+        N (int): The number of generated data points.
+        
+    Returns:
+        x (2D numpy array): The generated data points.
+    """
+    # Get the number of components
+    K = pi.shape[0]
+
+    # Get the number of dimensions
+    #D = mu.shape[0] # == 1
+
+    # Get the component weights, add 0 at the beginning, and get rid of the last element. WHY???
+    pi = np.concatenate(([0], np.cumsum(pi[:-1])))/np.sum(pi)
+
+    # Generate the latent variables
+    z = np.sum(np.random.uniform(size=[N, 1]) > np.tile(pi, (N, 1)), axis=1) - 1
+    print(z)
+    
+    # Generate dataset
+    x = np.zeros(N)
+
+    for k in range(K):
+        x[z == k] = np.random.normal(mu[k], 
+                                     sigma[k], 
+                                     np.sum(z==k))
+        
+    return x
+
+
 def estimate_kl_divergence_gmm(gmm_p, gmm_q):
     """Compute KL-divergence betweent two Gaussian Mixture Models.
     
@@ -103,5 +139,26 @@ def reorder_gmm_compoments(pp, mu, sigma):
     new_pp = pp[idx]
     new_mu = mu[idx, :]
     new_sigma = sigma.T[idx, :].T
+
+    return new_pp, new_mu, new_sigma
+
+def reorder_gmm_compoments_1D(pp, mu, sigma):
+    """Re-order GMM components based on their mixing weights.
+
+    Args:
+        pp (1D numpy array): The mixing weights of GMM.
+        mu (1D numpy array): The means of components of GMM.
+        sigma (1D numpy array): The covariances of components of GMM.
+
+    Returns:
+        new_pp (1D numpy array): The re-ordered mixing weights of GMM.
+        new_mu (1D numpy array): The re-ordered means of components of GMM.
+        new_sigma (1D numpy array): The re-ordered covariances of components
+            of GMM.
+    """
+    idx = pp.argsort()
+    new_pp = pp[idx]
+    new_mu = mu[idx]
+    new_sigma = sigma[idx]
 
     return new_pp, new_mu, new_sigma

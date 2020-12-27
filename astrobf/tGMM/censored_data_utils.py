@@ -37,6 +37,42 @@ def censor_and_truncate_data(y, c_up=25, c_low=0, t_up=np.inf, t_low=0):
 
     return x
 
+def censor_and_truncate_data_1D(y, c_up=25, c_low=0, t_up=np.inf, t_low=0):
+    """Perform censoring and truncation on the data.
+        NOTE
+        ----
+            Censoring : data points are NOT missing, but hava incorrect, lower/upper bound values
+            Truncation : data points below/above limits are missing 
+    
+    Args:
+        y (1D numpy array): The original data.
+        c_up (float): The upper censoring bound.
+        c_low (float): The lower censoring bound.
+        t_up (float): The upper truncation bound.
+        t_low (float): The lower truncation bound.
+        
+    Returns:
+        x (1D numpy array): The censored and truncated data.
+    """
+    # Truncation index (only truncate the first dimension)
+    idxt = y > t_low
+
+    # Censoring index
+    idxcu = y > c_up
+    idxcl = y < c_low
+
+    # Perform censoring
+    x = y
+    x[idxcu] = c_up
+    x[idxcl] = c_low
+
+    # Then perform truncation
+    x = x[idxt]
+
+    return x
+
+
+
 def find_censoring_pattern(x, bounds):
     """Find the censoring pattern from the truncated and censored data.
     
