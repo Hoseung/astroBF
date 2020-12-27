@@ -5,6 +5,7 @@ __email__       = "bahientranvn@gmail.com"
 
 
 import numpy as np
+from numpy import matlib 
 
 from scipy.stats import mvn, norm
 from scipy.stats import multivariate_normal
@@ -57,7 +58,7 @@ def estimate_mean_cov_truncated_normal(mu, sigma, a_star, b_star):
     
     # Estimate the expected value of observed data X
     tEX = (Fa - Fb).dot(sigma)
-    tEX = tEX / np.matlib.repmat(alpha, 1, 1)
+    tEX = tEX / matlib.repmat(alpha, 1, 1)
 
     # Estimate the mean of the truncated data
     tmu = tEX + mu

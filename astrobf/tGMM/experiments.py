@@ -146,10 +146,10 @@ def perform_bivariate_3_gaussians_exp(N, pp, mu_1, mu_2, mu_3,
     tc_kl = estimate_kl_divergence_gmm(true_gmm, tc_gmm)
     std_kl = estimate_kl_divergence_gmm(true_gmm, std_gmm)    
 
-    print("\t* KL-Divergence corresponding to truncated and censored EM: {}").\
-        format(tc_kl)
-    print("\t* KL-Divergence corresponding to standard EM: {}").\
-        format(std_kl)
+    print("\t* KL-Divergence corresponding to truncated and censored EM: {}".\
+        format(tc_kl))
+    print("\t* KL-Divergence corresponding to standard EM: {}".\
+        format(std_kl))
     print("\n" + "*"*80)
 
     # Show the plots
