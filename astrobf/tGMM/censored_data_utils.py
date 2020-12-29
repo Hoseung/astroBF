@@ -82,6 +82,9 @@ def find_censoring_pattern(x, bounds):
         
     Returns:
         pattern (dictionary): The desired pattern.
+
+
+    possible patterns are: [T,T], [T,F], [F,T], [F,F] T/F for X/Y censored or not.
     """
     # Get the number of data points and the number of dimensions
     # of each data point
@@ -96,10 +99,10 @@ def find_censoring_pattern(x, bounds):
     upper_bounds = bounds[1, :]
 
     # Find the censored coordiantes
-    censored = (x > lower_bounds) & (x < upper_bounds)
+    censored = (x > lower_bounds) & (x < upper_bounds) # Warning!! True for UNcensored elements. Misleading name
 
     # Find the datapoints that are completely observed
-    complete_instances = censored[:, 0] & censored[:, 1]
+    complete_instances = censored[:, 0] & censored[:, 1] # Again, False for censored elements. Right name.
 
     # Estimate the integral region for each datapoint
     integral_regions = []
@@ -123,6 +126,8 @@ def find_censoring_pattern(x, bounds):
             
     # Re-order the censoring pattern
     unique_pattern = np.unique(censored, axis=0)
+    # unique pattern as a combination of x/y un/censored (doesn't care upper/lower)
+    
     same_pattern = np.zeros([N, unique_pattern.shape[0]], dtype=np.bool)
 
     for k in range(unique_pattern.shape[0]):
@@ -133,7 +138,7 @@ def find_censoring_pattern(x, bounds):
     idx = num_patterns.argsort()[::-1]
     num_patterns = num_patterns[idx]
 
-    unique_pattern = unique_pattern[idx, :]
+    unique_pattern = unique_pattern[idx, :] 
     same_pattern = same_pattern[:, idx]
 
     # Return the dictionary containing the censoring patterns

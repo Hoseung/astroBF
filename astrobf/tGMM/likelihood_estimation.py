@@ -23,6 +23,10 @@ def estimate_censored_loglikelihood_component(x, pp, mu, sigma, pattern):
         
     Returns:
         log_likelihood (1D numpy array): The log likelihood of each data point.
+
+    Notes:
+        The notation follows that of Lee & Scott 2012, Ch.4. 
+        (on & mn appears near the bottom of pp.4)
     """
     eps = 10e-16
 
@@ -37,17 +41,19 @@ def estimate_censored_loglikelihood_component(x, pp, mu, sigma, pattern):
     log_p = np.log(pp)
 
     # Conduct mean substraction on the data
-    x0 = x - mu
+    x0 = x - mu 
 
     # Loop over each pattern and then estimate the corresponding log likelihood
-    # of censored elements
+    # of censored elements.
+    # In 2D case, again, possible patterns are: [T,T], [T,F], [F,T], [F,F] T/F for X/Y censored or not.
+    # patterns are sorted such that the 0-th group (T,T) consists of uncensored elements. 
     log_likelihood = np.zeros([N, 1])
-    for ii in range(num_patterns.shape[0]):
-        on = unique_pattern[ii, :] # The uncensored index
-        mn = ~on                   # The censored index
+    for ii in range(num_patterns.shape[0]): # between 1 and 4. 
+        on = unique_pattern[ii, :] # The uncensored(observed) index. i.e., [T,T] for uncensored data point
+        mn = ~on                   # The censored index. i.e., [T,F] for X-censored data point.
         do = np.sum(on)            # The number of censored dimensions
         dm = np.sum(mn)            # The number of uncensored dimensions
-        idx = np.where(same_pattern[:, ii])[0]
+        idx = np.where(same_pattern[:, ii])[0] # all data points with the current censor pattern.
 
         # Compute log likelihood of observed x_o
         # Factorize the covariance matrix by using Cholesky decomposition
