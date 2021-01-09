@@ -1,3 +1,35 @@
+import numpy as np
+
+def gen_stamp(img, pad=10, aspect_ratio="equal", eps=1e-10):
+    """
+    cut off empty area of an image.
+    """
+    nx, ny = img.shape
+
+    xsum = np.sum(img, axis=1)
+    ysum = np.sum(img, axis=0)
+
+    xl = np.argmax(xsum > eps)
+    xr = nx - np.argmax(xsum[::-1] > eps)
+    yl = np.argmax(ysum > eps)
+    yr = nx - np.argmax(ysum[::-1] > eps)
+
+    xl = max([0, xl-pad])
+    xr = min([nx-1, xr+pad])
+    yl = max([0, yl-pad])
+    yr = min([ny-1, yr+pad])
+
+    if aspect_ratio=="equal":
+        xl = min([xl, yl])
+        xr = max([xr, yr])
+        yl = xl
+        yr = xr
+
+    return img[xl:xr,yl:yr]
+
+
+
+
 import math
 import numpy as np
 import sys
@@ -113,6 +145,7 @@ def gmm_mask(hdulist,
             range_cut_max = 95.0,
             num_sample_x = 3000,
             sig_factor=3.0,
+            npix_min=9,
             verbose = True,
             do_plot = True):
     
@@ -190,6 +223,11 @@ def gmm_mask(hdulist,
 
     for ind in range(1, max_label+1):
         selected_region_ind = np.argwhere(use_label == ind)
+        if np.sum(selected_region_ind.shape[0] < npix_min):
+            mean_x_list.append(width*height)
+            mean_y_list.append(width*height)
+            mean_xy_distance_ratio_list.append(width*height)
+            continue
         num_label_region_dict[ind] = selected_region_ind.shape[0]
         if selected_region_ind.shape[0] == 1:
             mean_y, mean_x = selected_region_ind[0]
