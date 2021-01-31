@@ -223,6 +223,7 @@ def gmm_mask(hdulist,
 
     for ind in range(1, max_label+1):
         selected_region_ind = np.argwhere(use_label == ind)
+        #print("region length",selected_region_ind.shape)
         if np.sum(selected_region_ind.shape[0] < npix_min):
             mean_x_list.append(width*height)
             mean_y_list.append(width*height)
