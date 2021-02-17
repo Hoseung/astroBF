@@ -22,7 +22,7 @@ def chunks(lst, n):
 
 
 dataset = ['EFIFI','Nair'][1]
-basedir = ['../../bf_data/EFIGI_catalog/','/scratch/x1930a01/Nair_and_Abraham_2010/'][1]
+basedir = ['../../bf_data/EFIGI_catalog/','./'][1]
 fitsdir = basedir + ['fits_temp_Jan_19/','fits_temp_Dec_28/', 'fits_temp_Feb_3/'][2]
 
 out_dir = basedir+'out1/'
