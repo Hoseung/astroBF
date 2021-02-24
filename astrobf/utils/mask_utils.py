@@ -1,16 +1,40 @@
+import math
 import numpy as np
+import sys
+from sklearn import mixture
+from skimage import measure
+from skimage.morphology import convex_hull_image
+import matplotlib.pyplot as plt
+
 
 def gen_stamp(img, pad=10, aspect_ratio="equal", eps=1e-10):
     """
-    cut off empty area of an image.
+    Crop ROI of an image
+    
+    parameters
+    ----------
+    img : object image
+    pad : number of padding pixels. 
+    aspect_ratio : aspect ratio of the cropped image. square(equal) or not.
+    eps : pixels below eps value are considered empty and cropped.
+
     """
-    slices = _get_stamp_range(img, pad=10, aspect_ratio="equal", eps=1e-10)
+    slices = _get_stamp_range(img, pad=pad, aspect_ratio=aspect_ratio, eps=eps)
     return img[slices]
 
 
 def _get_stamp_range(img, pad=10, aspect_ratio="equal", eps=1e-10):
     """
-    cut off empty area of an image.
+    calculate index of square region of interest.
+    Returns n-d slice object.
+
+    parameters
+    ----------
+    img : object image
+    pad : number of padding pixels. 
+    aspect_ratio : aspect ratio of the cropped image. square(equal) or not.
+    eps : pixels below eps value are considered empty and cropped.
+
     """
     nx, ny = img.shape
 
@@ -36,29 +60,24 @@ def _get_stamp_range(img, pad=10, aspect_ratio="equal", eps=1e-10):
     return np.s_[xl:xr,yl:yr]
 
 
-
-
-import math
-import numpy as np
-import sys
-from sklearn import mixture
-from skimage import measure
-from skimage.morphology import convex_hull_image
-import matplotlib.pyplot as plt
-
-
 def gmm_aicc(aic, n_params, n_pix):
+    """
+    calculate Corrected AIC(akaikes information criterion) givne AIC.    
+    """
     return aic + 2.0 * n_params * (n_params + 1.0) / (n_pix - n_params - 1.0)    
     
 def get_best_gmm(stat_list, ratio_cut = 0.005):
+    """
+    
+    """
     # ratio_cut = 0.005 # 0.5%
-    change_ratio = None
+    #change_ratio = None
     prev_val = None
     best_n_comp = None
     best_val = None
     for ind, val in enumerate(stat_list):
         if ind == 0:
-            change_ratio = 1.0
+            change_ratio = 1.0 # Unused?
             prev_val = val
             best_val = val
             best_n_comp = 1

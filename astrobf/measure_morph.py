@@ -3,7 +3,7 @@ import re
 import os 
 import pickle
 from astropy.io import fits
-import statmorph
+import statmorph  # Just temporarily... 
 
 statMorph_fields = ['gini', 'm20', 'concentration', 'asymmetry', 'smoothness', 'intensity', 
     'xc_centroid', 'yc_centroid', 
