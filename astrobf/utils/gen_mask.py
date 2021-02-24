@@ -52,6 +52,7 @@ def run_mask(fns,
         from wcharm.FeatureVector import FeatureVector
         FeatureVectors=[]
 
+    print("Will dump files under:", out_dir)
     for ichunk, sub in enumerate(chunks(fns, sub_rows**2)):
         
         if do_plot:
