@@ -220,8 +220,6 @@ class Piecewise():
         return ln_a, b
 
 
-
-
 def Mantiuk_Seidel(img,s=1, **kwargs):
     """
     Generic model from Mantiuk & Seidel 2008
@@ -265,10 +263,7 @@ def Mantiuk_Seidel(img,s=1, **kwargs):
         'Spatial' modulation operator.
         
         "It specifies which spatial frequencies to amplify or compress 
-        and can be thought of as a selectionof low- and high-pass filters"
-        
-        음.... 
-        
+        and can be thought of as a selectionof low- and high-pass filters"      
         """
         
         return img
@@ -277,12 +272,6 @@ def Mantiuk_Seidel(img,s=1, **kwargs):
     lum = RGB_luminance(img, colorspace.primaries, colorspace.whitepoint)
     
     toned = tone_curve(lum, **kwargs) # or np.power(10, tone_curve(lum))
-    #x = np.logspace(-3,4.5,100)
-    #plt.plot(x, tone_curve(x, **kwargs))
-    #ax = plt.gca()
-    #ax.set_xscale('log')
-    #plt.show()
-    #plt.close()
     
     Color_ratio = toned/lum
     modulated = modulation_tf(toned)

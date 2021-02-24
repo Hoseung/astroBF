@@ -4,6 +4,14 @@ def gen_stamp(img, pad=10, aspect_ratio="equal", eps=1e-10):
     """
     cut off empty area of an image.
     """
+    slices = _get_stamp_range(img, pad=10, aspect_ratio="equal", eps=1e-10)
+    return img[slices]
+
+
+def _get_stamp_range(img, pad=10, aspect_ratio="equal", eps=1e-10):
+    """
+    cut off empty area of an image.
+    """
     nx, ny = img.shape
 
     xsum = np.sum(img, axis=1)
@@ -25,7 +33,7 @@ def gen_stamp(img, pad=10, aspect_ratio="equal", eps=1e-10):
         yl = xl
         yr = xr
 
-    return img[xl:xr,yl:yr]
+    return np.s_[xl:xr,yl:yr]
 
 
 
@@ -144,10 +152,10 @@ def gmm_mask(hdulist,
             range_cut_min = 0.1,
             range_cut_max = 95.0,
             num_sample_x = 3000,
-            sig_factor=3.0,
-            npix_min=9,
-            verbose = True,
-            do_plot = True):
+            sig_factor=2.0,
+            npix_min=50,
+            verbose = False,
+            do_plot = False):
     
     # Load image
     img_header = hdulist[0].header
