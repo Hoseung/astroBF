@@ -19,12 +19,12 @@ mkl-service==2.3.0
 networkx==2.5
 numpy==1.19.2
 olefile==0.46
-Pillow==8.0.1
+Pillow>=8.1.1
 pip==20.2.4
 pyparsing==2.4.7
 python-dateutil==2.8.1
 PyWavelets==1.1.1
-PyYAML==5.3.1
+PyYAML>=5.4
 scikit-image==0.17.2
 scipy==1.5.2
 setuptools==50.3.1.post20201107
