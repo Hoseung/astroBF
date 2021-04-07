@@ -220,43 +220,16 @@ class Piecewise():
         return ln_a, b
 
 
-def Mantiuk_Seidel(img,s=1, **kwargs):
+def apply_Mantiuk_Seidel(img,s=1, **kwargs):
     """
     Generic model from Mantiuk & Seidel 2008
     s : color_saturation_param
 
     NOTE
     ----
-    'reasonalbe' parameter values are quite different from the paper. What's wrong..?
+    'reasonable' parameter values are quite different from the paper. What's wrong..?
     """
     # What are reasonble values???
-    def tone_curve(lum, b=1.0, c=0.5, dl=1e-1, dh=1e1, gamma=2.2):
-        """
-        "Generic" tone curve. eq.3 in Mantiuk & Seidel 2008
-        
-        b : brightness adjustment param
-        c : contrast parameter
-        dl : lower midtone range
-        dh : higher midtone rang
-        gamma : display gamma
-        """
-        lp = np.log10(lum) # L prime
-        cp = gamma*c/np.log(10) 
-        
-        al = (c*dl-1)/dl # contrast compression for shadows
-        ah = (c*dh-1)/dh # contrast compression for highlights
-        
-        conditions=[lp <= b-dl,
-                (b-dl < lp) * (lp <= b),
-                (b < lp) * (lp <= b+dh),
-                    lp > b+dh]
-        functions=[0,
-                lambda lp : 1/2*c*(lp-b)/(1-al*(lp-b))+1/2,
-                lambda lp : 1/2*c*(lp-b)/(1+ah*(lp-b))+1/2,
-                1]
-        
-        return np.piecewise(lp, conditions, functions)
-
 
     def modulation_tf(img):
         """
@@ -271,9 +244,32 @@ def Mantiuk_Seidel(img,s=1, **kwargs):
     colorspace = RGB_COLOURSPACES['sRGB']
     lum = RGB_luminance(img, colorspace.primaries, colorspace.whitepoint)
     
-    toned = tone_curve(lum, **kwargs) # or np.power(10, tone_curve(lum))
+    toned = Mantiuk_Seidel(lum, **kwargs) # or np.power(10, tone_curve(lum))
     
     Color_ratio = toned/lum
     modulated = modulation_tf(toned)
     
     return img * np.expand_dims(modulated * Color_ratio**s, -1)
+
+
+def Mantiuk_Seidel(lum, b, c, dl, dh):
+    """
+    Condition:
+        * b - dl < max(lp) = 0.45
+        * b + dh > min(lp)
+    """
+    al = (c*dl-1)/dl # contrast compression for shadows
+    ah = (c*dh-1)/dh
+    lp = np.log10(lum) # L prime
+    
+    conditions=[lp <= b-dl,
+                (b-dl < lp) * (lp <= b),
+                (b < lp) * (lp <= b+dh),
+                lp > b+dh]
+
+    functions=[0,
+               lambda lp : 1/2*c*(lp-b)/(1-al*(lp-b))+1/2,
+               lambda lp : 1/2*c*(lp-b)/(1+ah*(lp-b))+1/2,
+               1]
+
+    return np.piecewise(lp, conditions, functions)

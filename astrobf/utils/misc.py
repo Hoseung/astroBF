@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def load_Nair(fn_cat):
     """
@@ -40,9 +41,8 @@ def load_Nair(fn_cat):
     return cat
 
 
-
 # Array manipulation - all replaced by sklearn preprocessing module :(
-import numpy as np
+
 def view_fields(arr, fields):
     return arr.getfield(np.dtype({name:arr.dtype.fields[name] for name in fields}))
 
