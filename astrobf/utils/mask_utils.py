@@ -119,7 +119,7 @@ def plot_gmm_statstics(max_n_comp, bic_list, aic_list, aicc_list):
 def plot_mixture_cut(img_data, use_label, 
                      convex_hull_results, binary_result, 
                      mean_x_list, mean_y_list, best_ind,
-                     use_factor, **kwargs):
+                     use_factor, fname='test', **kwargs):
     plt.figure(figsize=(12,12))
     plt.subplot(2,2,1)
     plt.imshow(img_data, cmap=plt.cm.gray, **kwargs)
@@ -143,7 +143,7 @@ def plot_mixture_cut(img_data, use_label,
     verticalalignment='center')
     plt.axis('off')
     plt.tight_layout()
-    plt.savefig("test_mixture_model_cut_results-%d_sigma.png" % (use_factor))
+    plt.savefig(f"mixture_model_cuts{fname}-{use_factor}_sigma.png")
     plt.close()
 
 def plot_gmm_model(img_data_1d, percent_values, num_hist_bins = 500):
@@ -164,7 +164,9 @@ def plot_gmm_model(img_data_1d, percent_values, num_hist_bins = 500):
     plt.close()
 
 
-def gmm_mask(hdulist,
+
+
+def gmm_mask(img_data,
             max_n_comp = 20,
             max_iter_gmm = 300,
             tol_gmm = 0.0001,
@@ -174,12 +176,11 @@ def gmm_mask(hdulist,
             sig_factor=2.0,
             npix_min=50,
             verbose = False,
-            do_plot = False):
+            plot_name = None):
+    """
+        compute GMM and return mask and convex hull 
+    """
     
-    # Load image
-    img_header = hdulist[0].header
-    img_data = hdulist[0].data
-    #hdulist.close()
     width=img_data.shape[0]
     height=img_data.shape[1]
     img_data_1d = img_data.reshape(-1, 1)
@@ -205,7 +206,7 @@ def gmm_mask(hdulist,
         aic_list.append(aic)
         aicc_list.append(gmm_aicc(aic, gmm._n_parameters(), num_pixels))
 
-    if do_plot: plot_gmm_statstics(max_n_comp, bic_list, aic_list, aicc_list)
+    if plot_name is not None: plot_gmm_statstics(max_n_comp, bic_list, aic_list, aicc_list)
 
     best_n_comp, best_val = get_best_gmm(aic_list)
 
@@ -281,10 +282,10 @@ def gmm_mask(hdulist,
 
     # convex hull
     convex_hull_results = convex_hull_image(target_mask, offset_coordinates=False, tolerance=1e-20)
-    if do_plot: plot_mixture_cut(img_data, use_label, 
+    if plot_name is not None: plot_mixture_cut(img_data, use_label, 
                      convex_hull_results, binary_result, 
                      mean_x_list, mean_y_list, best_ind, 
-                     use_factor=use_factor,
+                     use_factor=use_factor, fname=plot_name,
                      vmin=percent_values[0], vmax=percent_values[1])
 
-    return target_mask, img_data, convex_hull_results
+    return target_mask, convex_hull_results
