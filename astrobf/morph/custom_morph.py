@@ -113,7 +113,53 @@ def step_simple_morph(all_data,
         mask = mask.astype(bool)
         img[~mask] = np.nan
         #img *= 100 # MS08's generic TMs work best for pixels in (1e-2, 1e4)
+        img /= np.nanmax(img) / 1e2
         tonemapped = Mantiuk_Seidel(img, **tmo_params)
+        if np.sum(tonemapped) <= 0:
+            return ['bad', np.sum(tonemapped)]
+        result_arr[i]['id'] = this_gal['img_name']
+        result_arr[i]['gini'] = gini(tonemapped, mask)
+        result_arr[i]['m20']  = m20(tonemapped, mask)
+        
+    return result_arr
+
+
+def step_simple_morph_dual(all_data, 
+                           result_arr,
+                            tmo_2params, 
+                            eps=1e-6,
+                            do_plot=False,
+                            ):
+    """
+    Parameters
+    ----------
+    all_data : list of dictionary {'data':data, 'img_name':img_name, 'slices':slices}
+    tmo_params: iterable of parameteres [b, c, dl, dh] for Mantiuk_Seidel08 TMO.
+
+    Return:
+        an nd array for success, ['bad', sum of flux] list for fail.
+        keep both iterable!
+    """
+    ngal = len(all_data)
+
+    for i, this_gal in enumerate(all_data):
+        img, mask, weight = this_gal['data']
+        mask = mask.astype(bool)
+        img[~mask] = np.nan
+        #img *= 100 # MS08's generic TMs work best for pixels in (1e-2, 1e4)
+        img /= np.nanmax(img) / 1e2
+        if result_arr[i]['ttype'] ==0:
+            tonemapped = Mantiuk_Seidel(img, 
+            tmo_2params['b'], 
+            tmo_2params['c'],
+            tmo_2params['dl'],
+            tmo_2params['dh'])
+        elif this_gal['ttype'] == 1:
+            tonemapped = Mantiuk_Seidel(img, 
+            tmo_2params['b2'], 
+            tmo_2params['c2'],
+            tmo_2params['dl2'],
+            tmo_2params['dh2'])
         if np.sum(tonemapped) <= 0:
             return ['bad', np.sum(tonemapped)]
         result_arr[i]['id'] = this_gal['img_name']
