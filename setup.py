@@ -22,7 +22,7 @@ setup(
     url='https://github.com/Hoseung/astroBF',
     classifiers=['Programming Language :: Python :: 3'],
     python_requires='>=3.7',
-    install_requires=['numpy', 'scikit-image', 'astropy'],
+    install_requires=['numpy', 'scikit-image', 'astropy', 'sklearn', 'matplotlib'],
     extras_require={'dev':[''],
                     'test':['']},
 )
