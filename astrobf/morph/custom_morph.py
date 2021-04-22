@@ -87,7 +87,6 @@ def m20(image, segmap, centers=None):
 
     return m20
 
-
 def step_simple_morph(all_data,  
                       tmo_params, 
                       eps=1e-6,
@@ -120,7 +119,7 @@ def step_simple_morph(all_data,
         result_arr[i]['id'] = this_gal['img_name']
         result_arr[i]['gini'] = gini(tonemapped, mask)
         result_arr[i]['m20']  = m20(tonemapped, mask)
-        
+        if result_arr[i]['gini'] < -90 or result_arr[i]['m20'] < -90:
+            return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
     return result_arr
-
 
