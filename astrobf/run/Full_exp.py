@@ -24,7 +24,7 @@ def add_ttype(result_arr, cat):
     print("Is every element matched?: ", np.all(cat[inds]['ID'] == result_arr['id']))
     result_arr['ttype'] = cat[inds]['TT']
 
-def bench_clustering(clu, data, labels):
+def bench_clustering(clu, data, gt_labels):
     """Benchmark to evaluate the clu initialization methods.
 
     Parameters
@@ -43,28 +43,31 @@ def bench_clustering(clu, data, labels):
     """
 
     estimator = make_pipeline(StandardScaler(), clu).fit(data)
-    #results = [estimator[-1].inertia_] # Kmeans only.
-
+    
     # Define the metrics which require only the true labels and estimator
     # labels
-    clustering_metrics = [
+    clustering_metrics_w_Gt = [
         metrics.homogeneity_score,
         metrics.completeness_score,
         metrics.v_measure_score,
-        metrics.adjusted_rand_score,
-        metrics.adjusted_mutual_info_score,
-    ]
-    results = [m(labels, estimator[-1].labels_) for m in clustering_metrics]
+        metrics.adjusted_rand_score, # similarity b/w the two, ignoring permutation.
+        metrics.adjusted_mutual_info_score, #
+        metrics.fowlkes_mallows_score, 
+    ] # So far, Ground Truth labels are required. 
+    results = [(m.__name__, m(gt_labels, estimator[-1].labels_)) for m in clustering_metrics_w_Gt]
 
-    # The silhouette score requires the full dataset
-    results += [
-        metrics.silhouette_score(data, estimator[-1].labels_,
-                                 metric="euclidean", sample_size=300,)
+    # The silhouette score requires the full dataset,
+    # unless I provide pairwise distances b/w samples (metric=="precomputed")
+    clustering_metrics_wo_Gt = [
+        metrics.silhouette_score,
+        metrics.calinski_harabasz_score,
+        metrics.cluster.davies_bouldin_score,
     ]
+    results += [(m.__name__, m(data, estimator[-1].labels_)) for m in clustering_metrics_wo_Gt]
 
     return results
 
-def do_ML(result_arr, n_clusters=2, fields=['gini', 'm20', 'concentration'],
+def do_ML(result_arr, labeler, n_clusters=2, fields=['gini', 'm20', 'concentration'],
           return_cluster=False, cluster_method="ward"):
     """
     Perform clustering/classification and return a metric to optimize.
@@ -76,7 +79,7 @@ def do_ML(result_arr, n_clusters=2, fields=['gini', 'm20', 'concentration'],
     compact = struct_to_ndarray(select_columns(result_arr, fields))
     
     # Binary classification 
-    labels = np.array((result_arr['ttype'] >= 3) * (result_arr['ttype'] <= 6), dtype=int)
+    labels = labeler(result_arr)
     print("Label 1 samples {}/{}".format(np.sum(labels), len(result_arr)))
     
     if cluster_method == "kmeans":
