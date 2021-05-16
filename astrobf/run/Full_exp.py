@@ -15,6 +15,7 @@ from sklearn.cluster import AgglomerativeClustering, AffinityPropagation, Birch,
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from astrobf.utils import metrics as mymetrics
 
 def add_ttype(result_arr, cat):
     """
@@ -67,8 +68,8 @@ def bench_clustering(clu, data, gt_labels):
 
     return results
 
-def do_ML(result_arr, labeler, n_clusters=2, fields=['gini', 'm20', 'concentration'],
-          return_cluster=False, cluster_method="ward"):
+def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'concentration'],
+          return_cluster=False, cluster_method="ward", eval_weight=None):
     """
     Perform clustering/classification and return a metric to optimize.
 
@@ -88,23 +89,27 @@ def do_ML(result_arr, labeler, n_clusters=2, fields=['gini', 'm20', 'concentrati
     elif cluster_method == "ward":
         clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
     eval_metrics = bench_clustering(clustering, compact, labels)
+    # Add sample-weightd fowlkes_mallows_score
+    if not eval_weight == None:
+        eval_weight = catalog[eval_weight]
+    eval_metrics.append(['sample-weighted FMS', 
+                    mymetrics.fowlkes_mallows_score_w(labels, clustering.labels_, weights=eval_weight)])
     if not return_cluster:
         return eval_metrics
     else:
         return eval_metrics, clustering
 
 
-def evaluate(params, cluster_method="agglo"):
+def evaluate(params, cluster_method="agglo", eval_method='sample-weighted FMS'):
     result_arr = custom_morph.step_simple_morph(all_gals, params)
     if result_arr[0] == "bad":
         #print(result_arr)
         return {"mymetric": (-1, 0), "total_flux":(result_arr[1],0)}
     add_ttype(result_arr, cat)
     eval_metrics = do_ML(result_arr, fields=['gini', 'm20'], cluster_method='ward')
-    silhouette_score = eval_metrics[-1]
+    clustering_score = [val for (name, val) in eval_metrics if name == eval_method][0]
     stderr = 0.0
-    return {"mymetric": (silhouette_score, stderr), "total_flux":(1,0)}
-
+    return {"mymetric": (clustering_score, stderr), "total_flux":(1,0)}
 
 
 ## Run
