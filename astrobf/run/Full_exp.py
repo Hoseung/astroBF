@@ -109,6 +109,7 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
     parameters
     ----------
     return_clustering : only for post analysis purpose
+    cluster_method: ['kmeans', 'ward', 'agglomerate', 'spectral']
     """
     compact = struct_to_ndarray(select_columns(result_arr, fields))
     
@@ -123,6 +124,8 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
         clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
     elif cluster_method == "agglomerate":
         clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='average')
+    elif cluster_method == 'spectral':
+        clustering = SpectralClustering(n_clusters=n_clusters, assign_labels='discretize')
     eval_metrics = bench_clustering(clustering, compact, labels)
     # Add sample-weightd fowlkes_mallows_score
     if not eval_weight == None:
