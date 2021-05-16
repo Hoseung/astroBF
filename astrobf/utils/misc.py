@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def load_Nair(fn_cat):
+def load_Nair(fn_cat, verbose=False):
     """
     The catalog seems to have written low level languages in mind. 
     It's strictly formatted (using white spaces for missing values), making CSV utilities useless.
@@ -29,8 +29,9 @@ def load_Nair(fn_cat):
     dat = pd.read_fwf(fn_cat, colspecs=colspecs, 
                     names=headings, header=None)
 
-    with pd.option_context('display.max_rows', 10, 'display.max_columns', None):
-        print (dat)    
+    if verbose:
+        with pd.option_context('display.max_rows', 10, 'display.max_columns', None):
+            print(dat)
 
     # follow result_arr's convention
     dat['ID'] = dat['ID'].apply(lambda x: x.replace('-','m'))

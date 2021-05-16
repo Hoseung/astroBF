@@ -4,6 +4,9 @@ from astrobf.tmo import Mantiuk_Seidel
 from matplotlib.colors import LogNorm
 
 def subplot_shape(num, orientation='landscape'):
+    """
+    For a givne number of panels, set a roughly square shape of panel grid.
+    """
     nrow = num // int(np.sqrt(num))
     ncol = np.ceil(num / nrow).astype(int)
     
@@ -13,6 +16,15 @@ def subplot_shape(num, orientation='landscape'):
         return min((nrow, ncol)), max((nrow, ncol))
     
 def setup_axs(npanels, mult_c=1, mult_r=1, **kwargs):
+    """
+    Creates axes of panels for a given number of panels
+
+    parameters
+    ----------
+    npanels : # of panels
+    mult_c : if larger than 1, make a grid of mulitple columns 
+    mult_r : if larger than 1, make a grid of multiple rows
+    """
     nrow, ncol = subplot_shape(npanels, **kwargs)
     nrow *= mult_r
     ncol *= mult_c
@@ -59,7 +71,7 @@ def plot_group_comparison(sample1, sample2, tmo_params,
             tonemapped = Mantiuk_Seidel(img, **tmo_params)
             ax.imshow(tonemapped)
             ax.text(0.1,0.1, f"{this_gal['img_name']}", transform=ax.transAxes, c='w')
-    fig.suptitle(suptitle)
+    fig.suptitle(suptitle, y=0.92, fontsize=16)
     if fn is not None:
         plt.savefig(fn, facecolor='w')
         plt.close()
@@ -85,10 +97,6 @@ def plot_classification_vs_answer(results, groups, labeler,
     xmax = max([grp[f1].max() for grp in groups]+[results[f1].max()])
     ymin = min([grp[f2].min() for grp in groups]+[results[f2].min()])
     ymax = max([grp[f2].max() for grp in groups]+[results[f2].max()])
-    #xmin = min((results[f1].min(),clu1[f1].min(), clu2[f1].min()))
-    #xmax = max((results[f1].max(),clu1[f1].max(), clu2[f1].max()))
-    #ymin = min((results[f2].min(),clu1[f2].min(), clu2[f2].min()))
-    #ymax = max((results[f2].max(),clu1[f2].max(), clu2[f2].max()))
     
     counts, xbins, ybins, _image = axs[0].hist2d(results[f1],
                                              results[f2],
@@ -126,26 +134,32 @@ def plot_classification_vs_answer(results, groups, labeler,
 
     plt.tight_layout()
     if fn is not None: plt.savefig(fn)
+    plt.close()
 
-def plot_group_evals_w_centers(groups1, typicals1, groups2, typicals2,
+def plot_group_evals_w_centers(clus_org, typical_results_org,
+                               clus_this, typical_results_this,
                                fn=None):
-    fig, axs = plt.subplots(2,2, sharex=True, sharey=True)
-    fig.set_size_inches(12,12)
-    
-    for clu in groups1:
-        axs[0,0].scatter(clu['gini'],clu['m20'])
-    for tt in typicals1:
-        axs[0,0].scatter(tt['gini'], tt['m20'])#, c='r')
-    #for tt in typicals1[1]:
-    #    axs[0,0].scatter(tt['gini'], tt['m20'], c='g')
 
-    for clu in groups2:
-        axs[0,1].scatter(clu['gini'],clu['m20'])
-    for tt in typicals2:
-        axs[0,1].scatter(tt['gini'], tt['m20'])#, c='r')
-    #for tt in typicals2[1]:
-    #    axs[0,1].scatter(tt['gini'], tt['m20'], c='g')
-                        
+    ngroups = len(typical_results_this)
+    assert len(clus_org) == len(clus_this) == len(typical_results_org) \
+        == ngroups, "number of elements of each input must be the same"
+
+    # this shouldn't be hardcoded...
+    fig, axs = setup_axs(2)
+    axs = axs.ravel()
+
+    for i in range(ngroups):
+        clu = clus_org[i]
+        tt = typical_results_org[i]
+        clu_t = clus_this[i]
+        tt_t = typical_results_this[i]
+
+        axs[0].scatter(clu['gini'],clu['m20'])
+        axs[0].scatter(tt['gini'], tt['m20'])#, c='r')
+        axs[1].scatter(clu_t['gini'],clu_t['m20'])
+        axs[1].scatter(tt_t['gini'], tt_t['m20'])#, c='r')
+
     fig.suptitle("best model        vs       current model")
     plt.tight_layout()
-    plt.savefig(fn)    
+    plt.savefig(fn)
+    plt.close()
