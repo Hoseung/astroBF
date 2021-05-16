@@ -68,10 +68,11 @@ def bench_clustering(clu, data, gt_labels):
 
     return results
 
-def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'concentration'],
+def do_ML_uni(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'concentration'],
           return_cluster=False, cluster_method="ward", eval_weight=None):
     """
     Perform clustering/classification and return a metric to optimize.
+    Uses only one set of TMO parameters.
 
     parameters
     ----------
@@ -88,6 +89,40 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
                         random_state=0)
     elif cluster_method == "ward":
         clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
+    eval_metrics = bench_clustering(clustering, compact, labels)
+    # Add sample-weightd fowlkes_mallows_score
+    if not eval_weight == None:
+        eval_weight = catalog[eval_weight]
+    eval_metrics.append(['sample-weighted FMS', 
+                    mymetrics.fowlkes_mallows_score_w(labels, clustering.labels_, weights=eval_weight)])
+    if not return_cluster:
+        return eval_metrics
+    else:
+        return eval_metrics, clustering
+
+def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'concentration'],
+          return_cluster=False, cluster_method="ward", eval_weight=None):
+    """
+    Perform clustering/classification and return a metric to optimize.
+    Uses multiple sets of TMO parameters.
+
+    parameters
+    ----------
+    return_clustering : only for post analysis purpose
+    """
+    compact = struct_to_ndarray(select_columns(result_arr, fields))
+    
+    # Binary classification 
+    labels = labeler(result_arr)
+    print("Label 1 samples {}/{}".format(np.sum(labels), len(result_arr)))
+    
+    if cluster_method == "kmeans":
+        clustering = KMeans(init="k-means++", n_clusters=n_clusters, n_init=4,
+                        random_state=0)
+    elif cluster_method == "ward":
+        clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
+    elif cluster_method == "agglomerate":
+        clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='average')
     eval_metrics = bench_clustering(clustering, compact, labels)
     # Add sample-weightd fowlkes_mallows_score
     if not eval_weight == None:
