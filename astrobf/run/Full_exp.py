@@ -23,7 +23,7 @@ def add_ttype(result_arr, cat):
     """
     inds = cat['ID'].searchsorted(result_arr['id'])
     print("Is every element matched?: ", np.all(cat[inds]['ID'] == result_arr['id']))
-    result_arr['ttype'] = cat[inds]['TT']
+    result_arr['ttype'] = cat[inds]['TT'] # Is it the right t-type? 
 
 def bench_clustering(clu, data, gt_labels):
     """Benchmark to evaluate the clu initialization methods.
@@ -116,15 +116,19 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
     # Binary classification 
     labels = labeler(result_arr)
     print("Label 1 samples {}/{}".format(np.sum(labels), len(result_arr)))
-    
+    print("cluter_method", cluster_method)
     if cluster_method == "kmeans":
         clustering = KMeans(init="k-means++", n_clusters=n_clusters, n_init=4,
                         random_state=0)
+        print("km")
     elif cluster_method == "ward":
+        print("ward")
         clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
     elif cluster_method == "agglomerate":
+        print("agg")
         clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='average')
     elif cluster_method == 'spectral':
+        print("spec")
         clustering = SpectralClustering(n_clusters=n_clusters, assign_labels='discretize')
     eval_metrics = bench_clustering(clustering, compact, labels)
     # Add sample-weightd fowlkes_mallows_score
@@ -138,13 +142,25 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
         return eval_metrics, clustering
 
 
-def evaluate(params, cluster_method="agglo", eval_method='sample-weighted FMS'):
-    result_arr = custom_morph.step_simple_morph(all_gals, params)
+def evaluate(param_list, cluster_method="agglomerate", eval_method='sample-weighted FMS'):
+    """
+    Incomplete. Refer to Jupyter version.
+    """
+    # Based on the original label, 
+    for params in param_list:
+        # label -> 0 / 1 or 
+        # labeler(cat) 
+        ind = np.where(cat['label'] == 1)
+        result_arr = custom_morph.step_simple_morph(all_gals, params)
+
+
     if result_arr[0] == "bad":
         #print(result_arr)
         return {"mymetric": (-1, 0), "total_flux":(result_arr[1],0)}
     add_ttype(result_arr, cat)
-    eval_metrics = do_ML(result_arr, fields=['gini', 'm20'], cluster_method='ward')
+    eval_metrics = do_ML(result_arr, fields=['gini', 'm20'], 
+                         cluster_method=cluster_method,
+                         eval_weight='area')
     clustering_score = [val for (name, val) in eval_metrics if name == eval_method][0]
     stderr = 0.0
     return {"mymetric": (clustering_score, stderr), "total_flux":(1,0)}

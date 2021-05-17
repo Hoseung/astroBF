@@ -126,6 +126,7 @@ def init_simple_morph(all_data,
 
 def step_simple_morph(all_data,  
                       tmo_params, 
+                      ind=None,
                       eps=1e-6,
                       do_plot=False,
                       fields = ['gini', 'm20']):
@@ -143,8 +144,11 @@ def step_simple_morph(all_data,
     result_arr = np.zeros(ngal, 
                       dtype=[('id','<U24'),('ttype',int), ('size', float)]
                            +[(ff,float) for ff in fields])
-
-    for i, this_gal in enumerate(all_data):
+    if ind is None:
+        ind = np.arange(len(all_data))
+    
+    for i, ii in enumerate(ind):
+        this_gal = all_data[ii]
         img, mask, weight = this_gal['data']
         mask = mask.astype(bool)
         img[~mask] = np.nan
