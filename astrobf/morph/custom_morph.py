@@ -140,12 +140,15 @@ def step_simple_morph(all_data,
         an nd array for success, ['bad', sum of flux] list for fail.
         keep both iterable!
     """
-    ngal = len(all_data)
+    if ind is None:
+        ind = np.arange(len(all_data))
+        ngal = len(all_data)
+    else:
+        ngal = len(ind)
+
     result_arr = np.zeros(ngal, 
                       dtype=[('id','<U24'),('ttype',int), ('size', float)]
                            +[(ff,float) for ff in fields])
-    if ind is None:
-        ind = np.arange(len(all_data))
     
     for i, ii in enumerate(ind):
         this_gal = all_data[ii]
