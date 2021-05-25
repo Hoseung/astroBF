@@ -140,6 +140,7 @@ def plot_group_evals_w_centers(clus_org, typical_results_org,
 
     # this shouldn't be hardcoded...
     fig, axs = setup_axs(2)
+    fig.set_size_inches(14,8)
     axs = axs.ravel()
 
     for i in range(ngroups):
@@ -157,3 +158,25 @@ def plot_group_evals_w_centers(clus_org, typical_results_org,
     plt.tight_layout()
     plt.savefig(fn)
     plt.close()
+
+
+def labeler(results, bins, field='ttype'):
+    return np.digitize(results[field], bins, right=False) -1
+
+
+def sample_in_bins(cat, ngroups, bins, bin_mask=None, label_field='TT'):
+    cat.loc[:, 'label'] = labeler(cat, bins=bins, field=label_field) # pd automatically appends a new column
+
+    uind = cat['label'].unique()
+    if bin_mask is None: bin_mask = np.arange(len(bins))
+    assert len(uind) == len(bin_mask)
+    glabels_keep = [i for i,flag in zip(uind, bin_mask) if flag]
+
+    return cat[cat['label'].isin(glabels_keep)].to_records(index=False)
+
+def ext_single_param(parameters, suffix):
+    dd =[]
+    for (kk,vv) in parameters.items():
+        if suffix in kk:
+            dd.append((kk.replace(suffix,''),vv))
+    return dict(dd)

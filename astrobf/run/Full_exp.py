@@ -215,3 +215,36 @@ if __name__ == "__main__":
     ax_client.save_to_json_file("Ward_3to7_rescale100_test.json")
 
     # Do visualization in notebook
+
+
+def run_morph_in_parts(galaxies, catalog, plist, ngroups):
+    """
+    measure morphology parameters of each class and return merged array of results.
+    
+    parameters
+    ----------
+    galaxies:
+        list of Galaxy data set (image, name, slice)
+    catalog:
+        ndarray containing ID, Label (and t-type)
+    plist:
+        list of tmo parameters
+    ngroups:
+        number of groups
+    """
+    assert len(plist) == ngroups, "ngroups and number of TMO parameters don't match"
+    
+    result_list = []
+    for i in range(ngroups):
+        result_list.append(custom_morph.step_simple_morph(galaxies, 
+                                                          plist[i], 
+                                                          np.where(catalog['label'] == i)[0]))
+        if "bad" in result_list[-1]:
+            return {"mymetric": (-1, 0), "total_flux":(0,0)}
+
+    # sort
+    result_arr = np.concatenate(result_list)
+    result_arr = result_arr[np.argsort(result_arr['id'])] # Sort first to apply 'searchsorted'
+    inds = result_arr['id'].searchsorted(catalog["ID"])
+    result_arr = result_arr[inds]
+    return result_arr
