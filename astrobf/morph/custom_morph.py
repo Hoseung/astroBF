@@ -38,7 +38,6 @@ def m20(image, segmap, centers=None):
         return -99.0  # invalid
 
     # Use the same region as in the Gini calculation
-    #image = np.where(self._segmap_gini, self._cutout_stamp_maskzeroed, 0.0)
     image = np.float64(image)  # skimage wants double
 
     # Calculate centroid
@@ -63,11 +62,7 @@ def m20(image, segmap, centers=None):
     flux_fraction = np.cumsum(sorted_pixelvals) / np.sum(sorted_pixelvals)
     sorted_pixelvals_20 = sorted_pixelvals[flux_fraction >= 0.8]
     if len(sorted_pixelvals_20) == 0:
-        # This can happen when there are very few pixels.
-        #warnings.warn('[m20] Not enough data for M20 calculation.',
-        #              AstropyUserWarning)
-        print('[m20] Not enough data for M20 calculation.')
-        #flag = 1
+        print('[m20] Not enough data for M20 calculation. Too few pixels')
         return -99.0  # invalid
     threshold = sorted_pixelvals_20[0]
 
@@ -77,9 +72,6 @@ def m20(image, segmap, centers=None):
     second_moment_20 = Mc_20[0, 2] + Mc_20[2, 0]
 
     if (second_moment_20 <= 0) | (second_moment_tot <= 0):
-        #warnings.warn('[m20] Negative second moment(s).',
-        #              AstropyUserWarning)
-        #flag = 1
         print('[m20] Negative second moment(s).')
         m20 = -99.0  # invalid
     else:
@@ -117,7 +109,9 @@ def step_simple_morph(all_data,
         this_gal = all_data[ii]
         img, mask, weight = this_gal['data']
         mask = mask.astype(bool)
+        # clean up
         img[~mask] = np.nan
+        img[img < 0] = 0
         #img *= 100 # MS08's generic TMs work best for pixels in (1e-2, 1e4)
         img /= np.nanmax(img) / 1e2
         tonemapped = Mantiuk_Seidel(img, **tmo_params)

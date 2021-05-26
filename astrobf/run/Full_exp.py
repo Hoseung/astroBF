@@ -129,7 +129,7 @@ def run_morph_in_parts(galaxies, catalog, plist, ngroups):
                                                           plist[i], 
                                                           np.where(catalog['label'] == i)[0]))
         if "bad" in result_list[-1]:
-            return {"mymetric": (-1, 0), "total_flux":(0,0)}
+            return "bad"
 
     # sort
     result_arr = np.concatenate(result_list)
