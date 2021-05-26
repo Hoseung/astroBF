@@ -87,43 +87,6 @@ def m20(image, segmap, centers=None):
 
     return m20
 
-def init_simple_morph(all_data,
-                      tmo_params, 
-                      eps=1e-6,
-                      do_plot=False,
-                      fields = ['gini', 'm20']):
-    """
-    Parameters
-    ----------
-    all_data : list of dictionary {'data':data, 'img_name':img_name, 'slices':slices}
-    tmo_params: iterable of parameteres [b, c, dl, dh] for Mantiuk_Seidel08 TMO.
-
-    Return:
-        an nd array for success, ['bad', sum of flux] list for fail.
-        keep both iterable!
-    """
-    ngal = len(all_data)
-    result_arr = np.zeros(ngal, 
-                      dtype=[('id','<U24'),('ttype',int), ('size', float)]
-                           +[(ff,float) for ff in fields])
-
-    for i, this_gal in enumerate(all_data):
-        img, mask, weight = this_gal['data']
-        mask = mask.astype(bool)
-        img[~mask] = np.nan
-        #img *= 100 # MS08's generic TMs work best for pixels in (1e-2, 1e4)
-        img /= np.nanmax(img) / 1e2
-        tonemapped = Mantiuk_Seidel(img, **tmo_params)
-        if np.sum(tonemapped) <= 0:
-            return ['bad', np.sum(tonemapped)]
-        result_arr[i]['id'] = this_gal['img_name']
-        result_arr[i]['gini'] = gini(tonemapped, mask)
-        result_arr[i]['m20']  = m20(tonemapped, mask)
-        if result_arr[i]['gini'] < -90 or result_arr[i]['m20'] < -90:
-            return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
-    return result_arr
-
-
 def step_simple_morph(all_data,  
                       tmo_params, 
                       ind=None,
