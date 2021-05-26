@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astrobf.tmo import Mantiuk_Seidel
 from matplotlib.colors import LogNorm
+from functools import partial
+
 
 def subplot_shape(num, orientation='landscape'):
     """
@@ -53,7 +55,8 @@ def plot_tonemapped_samples(sample, tmo_params, fn=None):
 
 def plot_group_comparison(samples, tmo_params, ngroups,
                           fn=None,
-                          suptitle=None):
+                          suptitle=None,
+                          simple_log=False):
     """
     comparison between two groups of samples.
     """
@@ -62,14 +65,19 @@ def plot_group_comparison(samples, tmo_params, ngroups,
     fig.set_size_inches(len(samples[0])*2.5, len(samples)*2.5)
 
     for axr, sample, tmo_param in zip(axs, samples, tmo_params):
+        if simple_log:
+            TM = np.log10
+        else:
+            TM = partial(Mantiuk_Seidel, **tmo_param)
+
         for i, this_gal in enumerate(sample):
             ax = axr[i]
-            img, mask, weight = this_gal['data']
-            mask = mask.astype(bool)
-            img[~mask] = np.nan
-            img /= np.nanmax(img) / 1e2
-            tonemapped = Mantiuk_Seidel(img, **tmo_param)
-            ax.imshow(tonemapped)
+            img, mask, weight = this_gal['data'].copy()
+            img = np.ma.masked_array(img, mask=~mask.astype(bool))
+            img[img.mask] = np.min(img)
+            img -= 1.1*img.min()
+            img /= np.max(img) / 1e2
+            ax.imshow(TM(img))
             ax.text(0.1,0.1, f"{this_gal['img_name']}", transform=ax.transAxes, c='w')
     fig.suptitle(suptitle, y=0.92, fontsize=16)
     if fn is not None:
@@ -114,13 +122,13 @@ def plot_classification_vs_answer(results, groups, labeler,
 
     axs[0].set_title("best parameter")
 
-    # ttype
-    labels = labeler(results)
+    labels = labeler(results) # Label based on results['ttype']
+    print("# labels", np.unique(labels))
     scatter = axs[1].scatter(results[f1], results[f2], c=labels, alpha=0.2)
     axs[1].set_title("Catalog classification")
     # valid porp are ['sizes', 'colors']
-    handles, labels = scatter.legend_elements(prop="colors", alpha=1)
-    legend2 = axs[1].legend(handles, ['others', 'late'], loc="upper right", title="class")
+    #handles, labels = scatter.legend_elements(prop="colors", alpha=1)
+    #legend2 = axs[1].legend(handles, ['others', 'late'], loc="upper right", title="class")
 
     axs[0].set_xlabel(f1)
     axs[1].set_xlabel(f1)
