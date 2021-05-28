@@ -23,7 +23,7 @@ setup(
     classifiers=['Programming Language :: Python :: 3'],
     python_requires='>=3.7',
     install_requires=['numpy', 'scikit-image', 'astropy', 'sklearn', 'matplotlib',
-                      'colour-science', 'ax-platform'],
+                      'colour-science', 'ax-platform', 'photutils'],
     extras_require={'dev':[''],
                     'test':['']},
 )

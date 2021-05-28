@@ -112,7 +112,7 @@ def step_simple_morph(all_data,
         # clean up
         img[~mask] = np.nan
         img[img < 0] = 0
-        #img *= 100 # MS08's generic TMs work best for pixels in (1e-2, 1e4)
+        # MS08's generic TMs work best for pixels in (1e-2, 1e4)
         img /= np.nanmax(img) / 1e2
         tonemapped = Mantiuk_Seidel(img, **tmo_params)
         if np.sum(tonemapped) <= 0:
