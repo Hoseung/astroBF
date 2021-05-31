@@ -188,3 +188,41 @@ def ext_single_param(parameters, suffix):
         if suffix in kk:
             dd.append((kk.replace(suffix,''),vv))
     return dict(dd)
+
+
+def gen_tmo_param_sets(ngroups):
+    ax_params = []
+    for i in range(ngroups):
+        ax_params.append(
+            {"name":f"b{i}", "type":"range", "bounds":[1.5,8.0], "value_type":"float"})
+        ax_params.append(
+            {"name":f"c{i}", "type":"range", "bounds":[1.5,8.0], "value_type":"float"})
+        ax_params.append(
+            {"name":f"dl{i}", "type":"range", "bounds":[1.0,15.0], "value_type":"float"})
+        ax_params.append(
+            {"name":f"dh{i}", "type":"range", "bounds":[1.0,15.0], "value_type":"float"})
+    return ax_params
+
+def gen_bin_n_mask(ngroups):
+    bins = [[-5,0,3,6,10], 
+        [-5,0,3,6,10], 
+        [-5,-3,0,3,5,7,10], 
+        [-5,-3,0,2,4,6,8,10,15]]
+    bin_masks = [[1,0,1,0,0], 
+             [1,1,1,1,0], 
+             [1,1,1,1,1,1,0],
+             [1,1,1,1,1,1,1,1,0]]
+
+    if ngroups == 2:
+        this_bin = bins[0]
+        bin_mask = bin_masks[0]
+    elif ngroups == 4:
+        this_bin = bins[1]
+        bin_mask = bin_masks[1]
+    elif ngroups == 6:
+        this_bin = bins[2]
+        bin_mask = bin_masks[2]
+    elif ngroups == 8:
+        this_bin = bins[3]
+        bin_mask = bin_masks[3]
+    return this_bin, bin_mask
