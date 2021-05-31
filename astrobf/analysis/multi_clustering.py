@@ -73,10 +73,9 @@ def plot_group_comparison(samples, tmo_params, ngroups,
         for i, this_gal in enumerate(sample):
             ax = axr[i]
             img, mask, weight = this_gal['data'].copy()
-            img = np.ma.masked_array(img, mask=~mask.astype(bool))
-            img[img.mask] = np.min(img)
-            img -= 1.1*img.min()
-            img /= np.max(img) / 1e2
+            mask = mask.astype(bool)
+            img[~mask] = np.nan
+            img /= np.nanmax(img) / 1e2
             ax.imshow(TM(img))
             ax.text(0.1,0.1, f"{this_gal['img_name']}", transform=ax.transAxes, c='w')
     fig.suptitle(suptitle, y=0.92, fontsize=16)
