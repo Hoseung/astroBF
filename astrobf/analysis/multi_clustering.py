@@ -7,7 +7,7 @@ from functools import partial
 
 def subplot_shape(num, orientation='landscape'):
     """
-    For a givne number of panels, set a roughly square shape of panel grid.
+    For a givne number of panels, return a 'good' shape of panel grid.
     """
     nrow = num // int(np.sqrt(num))
     ncol = np.ceil(num / nrow).astype(int)
@@ -17,7 +17,7 @@ def subplot_shape(num, orientation='landscape'):
     elif orientation == "landscape":
         return min((nrow, ncol)), max((nrow, ncol))
     
-def setup_axs(npanels, mult_c=1, mult_r=1, **kwargs):
+def setup_axs(npanels, mult_c=1, mult_r=1, orientation='landscape', **kwargs):
     """
     Creates axes of panels for a given number of panels
 
@@ -27,10 +27,11 @@ def setup_axs(npanels, mult_c=1, mult_r=1, **kwargs):
     mult_c : if larger than 1, make a grid of mulitple columns 
     mult_r : if larger than 1, make a grid of multiple rows
     """
-    nrow, ncol = subplot_shape(npanels, **kwargs)
+
+    nrow, ncol = subplot_shape(npanels, orientation=orientation)
     nrow *= mult_r
     ncol *= mult_c
-    fig, axs = plt.subplots(nrow, ncol)
+    fig, axs = plt.subplots(nrow, ncol, **kwargs)
     fig.set_size_inches(ncol*3, nrow*3)
     return fig, axs
 
