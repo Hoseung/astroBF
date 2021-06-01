@@ -7,7 +7,7 @@ from functools import partial
 
 def subplot_shape(num, orientation='landscape'):
     """
-    For a givne number of panels, set a roughly square shape of panel grid.
+    For a givne number of panels, return a 'good' shape of panel grid.
     """
     nrow = num // int(np.sqrt(num))
     ncol = np.ceil(num / nrow).astype(int)
@@ -17,7 +17,7 @@ def subplot_shape(num, orientation='landscape'):
     elif orientation == "landscape":
         return min((nrow, ncol)), max((nrow, ncol))
     
-def setup_axs(npanels, mult_c=1, mult_r=1, **kwargs):
+def setup_axs(npanels, mult_c=1, mult_r=1, orientation='landscape', **kwargs):
     """
     Creates axes of panels for a given number of panels
 
@@ -27,10 +27,11 @@ def setup_axs(npanels, mult_c=1, mult_r=1, **kwargs):
     mult_c : if larger than 1, make a grid of mulitple columns 
     mult_r : if larger than 1, make a grid of multiple rows
     """
-    nrow, ncol = subplot_shape(npanels, **kwargs)
+
+    nrow, ncol = subplot_shape(npanels, orientation=orientation)
     nrow *= mult_r
     ncol *= mult_c
-    fig, axs = plt.subplots(nrow, ncol)
+    fig, axs = plt.subplots(nrow, ncol, **kwargs)
     fig.set_size_inches(ncol*3, nrow*3)
     return fig, axs
 
@@ -73,10 +74,9 @@ def plot_group_comparison(samples, tmo_params, ngroups,
         for i, this_gal in enumerate(sample):
             ax = axr[i]
             img, mask, weight = this_gal['data'].copy()
-            img = np.ma.masked_array(img, mask=~mask.astype(bool))
-            img[img.mask] = np.min(img)
-            img -= 1.1*img.min()
-            img /= np.max(img) / 1e2
+            mask = mask.astype(bool)
+            img[~mask] = np.nan
+            img /= np.nanmax(img) / 1e2
             ax.imshow(TM(img))
             ax.text(0.1,0.1, f"{this_gal['img_name']}", transform=ax.transAxes, c='w')
     fig.suptitle(suptitle, y=0.92, fontsize=16)
@@ -188,3 +188,41 @@ def ext_single_param(parameters, suffix):
         if suffix in kk:
             dd.append((kk.replace(suffix,''),vv))
     return dict(dd)
+
+
+def gen_tmo_param_sets(ngroups):
+    ax_params = []
+    for i in range(ngroups):
+        ax_params.append(
+            {"name":f"b{i}", "type":"range", "bounds":[1.5,8.0], "value_type":"float"})
+        ax_params.append(
+            {"name":f"c{i}", "type":"range", "bounds":[1.5,8.0], "value_type":"float"})
+        ax_params.append(
+            {"name":f"dl{i}", "type":"range", "bounds":[1.0,15.0], "value_type":"float"})
+        ax_params.append(
+            {"name":f"dh{i}", "type":"range", "bounds":[1.0,15.0], "value_type":"float"})
+    return ax_params
+
+def gen_bin_n_mask(ngroups):
+    bins = [[-5,0,3,6,10], 
+        [-5,0,3,6,10], 
+        [-5,-3,0,3,5,7,10], 
+        [-5,-3,0,2,4,6,8,10,15]]
+    bin_masks = [[1,0,1,0,0], 
+             [1,1,1,1,0], 
+             [1,1,1,1,1,1,0],
+             [1,1,1,1,1,1,1,1,0]]
+
+    if ngroups == 2:
+        this_bin = bins[0]
+        bin_mask = bin_masks[0]
+    elif ngroups == 4:
+        this_bin = bins[1]
+        bin_mask = bin_masks[1]
+    elif ngroups == 6:
+        this_bin = bins[2]
+        bin_mask = bin_masks[2]
+    elif ngroups == 8:
+        this_bin = bins[3]
+        bin_mask = bin_masks[3]
+    return this_bin, bin_mask

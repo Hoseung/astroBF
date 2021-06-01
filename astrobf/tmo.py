@@ -257,6 +257,11 @@ def Mantiuk_Seidel(lum, b, c, dl, dh):
     Condition:
         * b - dl < max(lp) = 0.45
         * b + dh > min(lp)
+
+    NOTE
+    ----
+    The tone map function is dependent of input image. 
+    It can't be constructed once and called by multiple different images.
     """
     al = (c*dl-1)/dl # contrast compression for shadows
     ah = (c*dh-1)/dh
