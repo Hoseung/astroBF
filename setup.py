@@ -16,6 +16,7 @@ long_description = (here / "README.md").read_text(encoding='utf-8')
 setup(
     name='astrobf',
     version='0.0.1',
+    packages=find_packages(),
     description='Tone mapping for astronomical images',
     long_description=long_description,
     long_description_content_type='text/markdown',
