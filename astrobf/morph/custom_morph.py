@@ -146,9 +146,10 @@ class MorphImg():
     """
     No sky background assumed. 
     """
-    def __init__(self, subgal, tmo_param):
+    def __init__(self, subgal, tmo_param, gid=""):
         self._img, self._segmap, self._weight = subgal
         self.tmo_param = tmo_param
+        self.gid=gid
         self._preprocess()
         
         # parameters
@@ -186,9 +187,18 @@ class MorphImg():
     
     def measure_all(self):
         self.cal_moments()
-        self.cal_gini()
-        self.cal_m20()
-        self._calculate_asymm()
+        self.Gini = self.cal_gini()
+        if self.Gini < -90:
+            return -99
+        self.M20 = self.cal_m20()
+        if self.M20 < -90:
+            return -99
+        self.Asym = self._calculate_asymm()
+        if self.Asym < -90:
+            return -99
+        
+        return 1
+
 
     def _preprocess(self):
         """
@@ -239,10 +249,10 @@ class MorphImg():
                           #AstropyUserWarning)
             print('[gini] Not enough data for Gini calculation.')
 
-            return False  # invalid
+            return -99  # invalid
 
         indices = np.arange(1, n+1)  # start at i=1
-        self.Gini = (np.sum((2*indices-n-1) * sorted_pixelvals) /
+        return (np.sum((2*indices-n-1) * sorted_pixelvals) /
                 (float(n-1) * np.sum(sorted_pixelvals)))
 
 
@@ -273,8 +283,11 @@ class MorphImg():
         sorted_pixelvals = np.sort(image.flatten())
         flux_fraction = np.cumsum(sorted_pixelvals) / np.sum(sorted_pixelvals)
         sorted_pixelvals_20 = sorted_pixelvals[flux_fraction >= 0.8]
-        assert len(sorted_pixelvals_20) != 0, '[m20] Not enough data for M20 calculation. Too few pixels'
-        
+        if len(sorted_pixelvals_20) == 0:
+            print('[m20] Not enough data for M20 calculation. Too few pixels')
+            print(self.gid)
+            return -99.0
+
         threshold = sorted_pixelvals_20[0]
 
         # Calculate second moment of the brightest pixels
@@ -284,9 +297,9 @@ class MorphImg():
 
         if (second_moment_20 <= 0) | (second_moment_tot <= 0):
             print('[m20] Negative second moment(s).')
-            self.M20 = -99.0  # invalid
+            return -99.0  # invalid
         else:
-            self.M20 = np.log10(second_moment_20 / second_moment_tot)
+            return np.log10(second_moment_20 / second_moment_tot)
             
     def _asymmetry_function(self, center, image):
         """
@@ -339,17 +352,19 @@ class MorphImg():
         center_0 = np.array([self._xc, self._yc])  # initial guess
         center_asym = opt.minimize(self._asymmetry_function, center_0,
                                args=(self._tonemapped),
-                               tol=1e-6)#, disp=True)
+                               tol=1e-5)#, disp=True)
         # Print warning if center is masked
         ic, jc = int(np.round(center_asym.x[1])), int(np.round(center_asym.x[0]))
-        assert self._tonemapped[ic, jc] != 0, '[asym_center] Asymmetry center is masked.'
+        if self._tonemapped[ic, jc] == 0:
+            print('[asym_center] Asymmetry center is masked.')
+            return 
 
         self._xc_asym, self._yc_asym = center_asym.x
         
     def _calculate_asymm(self):
         if self._xc_asym ==0:
             self._asymmetry_center()
-        self.Asym = self._asymmetry_function(np.array([self._xc_asym, 
+        return self._asymmetry_function(np.array([self._xc_asym, 
                                                        self._yc_asym]),
                                              self._tonemapped)
     
@@ -486,7 +501,7 @@ class MorphImg():
             r += dr
 
         rpetro_circ = opt.brentq(self._petrosian_function_circ,
-                                 r_min, r_max, args=(center,), xtol=1e-6)
+                                 r_min, r_max, args=(center,), xtol=1e-5)
 
         return rpetro_circ    
     

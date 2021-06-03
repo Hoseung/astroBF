@@ -3,7 +3,7 @@ import numpy as np
 from astrobf.tmo import Mantiuk_Seidel
 from matplotlib.colors import LogNorm
 from functools import partial
-
+from ..morph.custom_morph import MorphImg
 
 def subplot_shape(num, orientation='landscape'):
     """
@@ -226,3 +226,31 @@ def gen_bin_n_mask(ngroups):
         this_bin = bins[3]
         bin_mask = bin_masks[3]
     return this_bin, bin_mask
+
+
+def get_morph(gals, tmo_params, ind):
+    """
+
+    """
+    if ind is None:
+        ind = np.arange(len(gals))
+        ngal = len(gals)
+    else:
+        ngal = len(ind)
+
+    result_arr = np.zeros(ngal, 
+                      dtype=[('id','<U24'),('ttype',int), ('size', float)]
+                           +[(ff,float) for ff in fields])
+    
+    for i, ii in enumerate(ind):
+        this_gal = gals[ii]
+        mo = MorphImg(this_gal['data'], tmo_params)
+        if np.sum(mo._tonemapped) <= 0:
+            return ['bad', np.sum(mo._tonemapped)]
+        result_arr[i]['id'] = this_gal['img_name']
+        result_arr[i]['gini'] = mo.Gini
+        result_arr[i]['m20']  = mo.M20
+        result_arr[i]['asymmetry'] = mo.Asym
+        if result_arr[i]['gini'] < -90 or result_arr[i]['m20'] < -90 or result_arr[i]['asymmetry'] < -90:
+            return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
+    return result_arr
