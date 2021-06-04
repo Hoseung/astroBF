@@ -228,9 +228,10 @@ def gen_bin_n_mask(ngroups):
     return this_bin, bin_mask
 
 
-def get_morph(gals, tmo_params, ind):
+def get_morph(gals, tmo_params, ind, fields):
     """
 
+    TODO: Need a cleaner way of error handling
     """
     if ind is None:
         ind = np.arange(len(gals))
@@ -244,13 +245,18 @@ def get_morph(gals, tmo_params, ind):
     
     for i, ii in enumerate(ind):
         this_gal = gals[ii]
-        mo = MorphImg(this_gal['data'], tmo_params)
-        if np.sum(mo._tonemapped) <= 0:
-            return ['bad', np.sum(mo._tonemapped)]
+        mi = MorphImg(this_gal, tmo_params)
+        check = mi.measure_all()
+        if check < -90:
+            print(f"ERROR in {i}-th galaxy", this_gal['img_name'])
+            return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
+        if np.sum(mi._tonemapped) <= 0:
+            return ['bad', np.sum(mi._tonemapped)]
         result_arr[i]['id'] = this_gal['img_name']
-        result_arr[i]['gini'] = mo.Gini
-        result_arr[i]['m20']  = mo.M20
-        result_arr[i]['asymmetry'] = mo.Asym
+        result_arr[i]['gini'] = mi.Gini
+        result_arr[i]['m20']  = mi.M20
+        result_arr[i]['asymmetry'] = mi.Asym
         if result_arr[i]['gini'] < -90 or result_arr[i]['m20'] < -90 or result_arr[i]['asymmetry'] < -90:
+            print(f"ERROR in {i}-th galaxy")
             return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
     return result_arr

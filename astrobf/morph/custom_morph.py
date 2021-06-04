@@ -146,8 +146,9 @@ class MorphImg():
     """
     No sky background assumed. 
     """
-    def __init__(self, subgal, tmo_param, gid=""):
-        self._img, self._segmap, self._weight = subgal
+    def __init__(self, subgal, tmo_param):
+        self._img, self._segmap, self._weight= subgal['data']
+        gid = subgal['img_name']
         self.tmo_param = tmo_param
         self.gid=gid
         self._preprocess()
@@ -158,11 +159,7 @@ class MorphImg():
         self._eta = 0.2 # Petrosian ratio
         
         # basic properties
-        self._xc = 0
-        self._yc = 0
-        
-        self._xc_asym = 0
-        self._yc_asym = 0
+        self._xc_asym, self._yc_asym = subgal['asym_center']
         
         # Target properties
         self.r20 = 0
@@ -349,6 +346,9 @@ class MorphImg():
         return asym
             
     def _asymmetry_center(self):
+        # Don't execute if asym centers are already given.
+        # If this assertion raises, you made a mistake in previous steps.
+        assert self._xc_asym == 0 & self._yc_asym == 0
         center_0 = np.array([self._xc, self._yc])  # initial guess
         center_asym = opt.minimize(self._asymmetry_function, center_0,
                                args=(self._tonemapped),
@@ -362,10 +362,10 @@ class MorphImg():
         self._xc_asym, self._yc_asym = center_asym.x
         
     def _calculate_asymm(self):
-        if self._xc_asym ==0:
-            self._asymmetry_center()
+        #if self._xc_asym ==0:
+        #    self._asymmetry_center()
         return self._asymmetry_function(np.array([self._xc_asym, 
-                                                       self._yc_asym]),
+                                                  self._yc_asym]),
                                              self._tonemapped)
     
     #############
