@@ -152,7 +152,7 @@ class MorphImg():
         self.tmo_param = tmo_param
         self.gid=gid
         self._preprocess()
-        
+        self.flag = 0
         # parameters
         self._annulus_width = 1.0
         self._petro_extent_cas = 1.5
@@ -183,18 +183,18 @@ class MorphImg():
         return np.sqrt(nx**2 + ny**2)
     
     def measure_all(self):
-        self.cal_moments()
-        self.Gini = self.cal_gini()
-        if self.Gini < -90:
-            return -99
-        self.M20 = self.cal_m20()
-        if self.M20 < -90:
-            return -99
-        self.Asym = self._calculate_asymm()
-        if self.Asym < -90:
-            return -99
-        
-        return 1
+        try:
+            self._cal_moments_1()
+            self._cal_moments_2()
+            self.Gini = self.cal_gini()
+            self.M20 = self.cal_m20()
+            self.Asym = self._calculate_asymm()
+        except:
+            pass
+        if self.flag != 0: 
+            return self.flag
+        else:
+            return 1
 
 
     def _preprocess(self):
@@ -209,22 +209,17 @@ class MorphImg():
         image /= np.nanmax(image) / 1e2
         self._tonemapped = Mantiuk_Seidel(image, **self.tmo_param)
     
-    def cal_moments(self):
-        """
-        
-        """
-        self._cal_moments_1()
-        self._cal_moments_2()
-    
     def _cal_moments_1(self):
         image = self._tonemapped
         M = skimage.measure.moments(image, order=1)
         if M[0, 0] <= 0:
             print('[deviation] Nonpositive flux within Gini segmap.')
-            return -99.0  # invalid
+            self.flag = -99
+            return -99
         self._yc = M[1, 0] / M[0, 0]
         self._xc = M[0, 1] / M[0, 0]
         self._M = M
+        
     
     def _cal_moments_2(self):
         self._Mc = skimage.measure.moments_central(self._img, 
@@ -246,7 +241,8 @@ class MorphImg():
                           #AstropyUserWarning)
             print('[gini] Not enough data for Gini calculation.')
 
-            return -99  # invalid
+            self.flag = -99  # invalid
+            return -99
 
         indices = np.arange(1, n+1)  # start at i=1
         return (np.sum((2*indices-n-1) * sorted_pixelvals) /
@@ -267,7 +263,7 @@ class MorphImg():
         segmap = self._segmap
         xc, yc = self._xc, self._yc
         if np.sum(segmap) == 0:
-            return -99.0  # invalid
+            self.flag =  -99.0  # invalid
 
         # Use the same region as in the Gini calculation
         image = np.float64(image)  # skimage wants double
@@ -283,7 +279,8 @@ class MorphImg():
         if len(sorted_pixelvals_20) == 0:
             print('[m20] Not enough data for M20 calculation. Too few pixels')
             print(self.gid)
-            return -99.0
+            self.flag = -99.0
+            return -99
 
         threshold = sorted_pixelvals_20[0]
 
@@ -294,7 +291,8 @@ class MorphImg():
 
         if (second_moment_20 <= 0) | (second_moment_tot <= 0):
             print('[m20] Negative second moment(s).')
-            return -99.0  # invalid
+            self.flag =  -99.0  # invalid
+            return -99
         else:
             return np.log10(second_moment_20 / second_moment_tot)
             
@@ -339,7 +337,7 @@ class MorphImg():
         if ap_abs_sum == 0.0:
             print('[asymmetry_function] Zero flux sum.')
             self.flag = 1
-            return -99.0  # invalid
+            self.flag =  -99.0  # invalid
 
         asym = ap_abs_diff / ap_abs_sum
 
@@ -357,7 +355,7 @@ class MorphImg():
         ic, jc = int(np.round(center_asym.x[1])), int(np.round(center_asym.x[0]))
         if self._tonemapped[ic, jc] == 0:
             print('[asym_center] Asymmetry center is masked.')
-            return 
+            return -99
 
         self._xc_asym, self._yc_asym = center_asym.x
         
