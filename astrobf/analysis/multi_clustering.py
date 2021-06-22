@@ -77,7 +77,10 @@ def plot_group_comparison(samples, tmo_params, ngroups,
             mask = mask.astype(bool)
             img[~mask] = np.nan
             img /= np.nanmax(img) / 1e2
-            ax.imshow(TM(img))
+            tmmed = TM(img)
+            tmmed[~mask] = np.nan
+            #print('simple_log', simple_log, tmmed.min())
+            ax.imshow(tmmed)
             ax.text(0.1,0.1, f"{this_gal['img_name']}", transform=ax.transAxes, c='w')
     fig.suptitle(suptitle, y=0.92, fontsize=16)
     if fn is not None:
