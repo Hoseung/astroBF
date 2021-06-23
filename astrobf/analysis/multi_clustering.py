@@ -62,8 +62,9 @@ def plot_group_comparison(samples, tmo_params, ngroups,
     comparison between two groups of samples.
     """
     assert ngroups == len(samples)
-    fig, axs = plt.subplots(len(samples), len(samples[0]))
-    fig.set_size_inches(len(samples[0])*2.5, len(samples)*2.5)
+    nsample = max([len(sam) for sam in samples])
+    fig, axs = plt.subplots(len(samples), nsample)
+    fig.set_size_inches(nsample*2.5, len(samples)*2.5)
 
     for axr, sample, tmo_param in zip(axs, samples, tmo_params):
         if simple_log:
