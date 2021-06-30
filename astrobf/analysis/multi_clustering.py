@@ -255,11 +255,14 @@ def get_morph(gals, tmo_params, ind, fields):
             return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
         if np.sum(mi._tonemapped) <= 0:
             return ['bad', np.sum(mi._tonemapped)]
+        
         result_arr[i]['id'] = this_gal['img_name']
-        result_arr[i]['gini'] = mi.Gini
-        result_arr[i]['m20']  = mi.M20
-        result_arr[i]['asymmetry'] = mi.Asym
-        if result_arr[i]['gini'] < -90 or result_arr[i]['m20'] < -90 or result_arr[i]['asymmetry'] < -90:
+        for ff in fields:
+            result_arr[i][ff] = getattr(mi, ff)
+        
+        if np.any([result_arr[i][ff] < -90 for ff in fields]):
             print(f"ERROR in {i}-th galaxy")
             return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
+
+    #print(result_arr['concentration'])
     return result_arr

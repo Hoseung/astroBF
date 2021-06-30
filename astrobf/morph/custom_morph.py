@@ -1,55 +1,11 @@
 import numpy as np
 import skimage
 from ..tmo import Mantiuk_Seidel
-
-
-def step_simple_morph(all_data,  
-                      tmo_params, 
-                      ind=None,
-                      eps=1e-6,
-                      do_plot=False,
-                      fields = ['gini', 'm20']):
-    """
-    Parameters
-    ----------
-    all_data : list of dictionary {'data':data, 'img_name':img_name, 'slices':slices}
-    tmo_params: iterable of parameteres [b, c, dl, dh] for Mantiuk_Seidel08 TMO.
-
-    Return:
-        an nd array for success, ['bad', sum of flux] list for fail.
-        keep both iterable!
-    """
-    if ind is None:
-        ind = np.arange(len(all_data))
-        ngal = len(all_data)
-    else:
-        ngal = len(ind)
-
-    result_arr = np.zeros(ngal, 
-                      dtype=[('id','<U24'),('ttype',int), ('size', float)]
-                           +[(ff,float) for ff in fields])
-    
-    for i, ii in enumerate(ind):
-        this_gal = all_data[ii]
-        img, mask, weight = this_gal['data']
-        mask = mask.astype(bool)
-        # clean up
-        img[~mask] = np.nan
-        img[img < 0] = 0
-        # MS08's generic TMs work best for pixels in (1e-2, 1e4)
-        img /= np.nanmax(img) / 1e2
-        tonemapped = Mantiuk_Seidel(img, **tmo_params)
-        if np.sum(tonemapped) <= 0:
-            return ['bad', np.sum(tonemapped)]
-        result_arr[i]['id'] = this_gal['img_name']
-        result_arr[i]['gini'] = gini(tonemapped, mask)
-        result_arr[i]['m20']  = m20(tonemapped, mask)
-        if result_arr[i]['gini'] < -90 or result_arr[i]['m20'] < -90:
-            return ['bad', np.sum((result_arr[i]['gini'],result_arr[i]['m20']))]
-    return result_arr
-
-
 from astropy.utils import lazyproperty
+import photutils
+from scipy import optimize as opt
+import photutils.aperture as ap
+
 
 def _aperture_mean_nomask(ap, image, **kwargs):
     """
@@ -60,12 +16,59 @@ def _aperture_mean_nomask(ap, image, **kwargs):
     This avoids problems when the aperture is larger than the
     region of interest.
     """
-    return ap.do_photometry(image, **kwargs)[0][0] / ap.area            
+    return ap.do_photometry(image, **kwargs)[0][0] / ap.area
 
-import photutils
-import skimage
-from scipy import optimize as opt
-import photutils.aperture as ap
+def _radius_at_fraction_of_total_circ(image, center, r_total, fraction):
+    """
+    Return the radius (in pixels) of a concentric circle that
+    contains a given fraction of the light within ``r_total``.
+    """
+    flag = 0  # flag=1 indicates a problem
+
+    ap_total = photutils.CircularAperture(center, r_total)
+
+    total_sum = ap_total.do_photometry(image, method='exact')[0][0]
+    assert total_sum != 0
+    if total_sum < 0:
+        print('[r_circ] Total flux sum is negative.')
+        flag = 1
+        total_sum = np.abs(total_sum)
+
+    # Find appropriate range for root finder
+    npoints = 100
+    r_grid = np.linspace(0.0, r_total, num=npoints)
+    i = 0  # initial value
+    while True:
+        assert i < npoints, 'Root not found within range.'
+        r = r_grid[i]
+        curval = _fraction_of_total_function_circ(
+            r, image, center, fraction, total_sum)
+        if curval <= 0:
+            r_min = r
+        elif curval > 0:
+            r_max = r
+            break
+        i += 1
+
+    r = opt.brentq(_fraction_of_total_function_circ, r_min, r_max,
+                   args=(image, center, fraction, total_sum), xtol=1e-6)
+
+    return r, flag
+
+def _fraction_of_total_function_circ(r, image, center, fraction, total_sum):
+    """
+    Helper function to calculate ``_radius_at_fraction_of_total_circ``.
+    """
+    assert (r >= 0) & (fraction >= 0) & (fraction <= 1) & (total_sum > 0)
+    if r == 0:
+        cur_fraction = 0.0
+    else:
+        ap = photutils.CircularAperture(center, r)
+        # Force flux sum to be positive:
+        ap_sum = np.abs(ap.do_photometry(image, method='exact')[0][0])
+        cur_fraction = ap_sum / total_sum
+
+    return cur_fraction - fraction
 class MorphImg():
     """
     No sky background assumed. 
@@ -88,11 +91,11 @@ class MorphImg():
         # Target properties
         self.r20 = 0
         self.r80 = 0
-        self.M20 = 0
-        self.Gini = 0
-        self.Asym = 0
-        self.Conc = 0
-        self.Smooth=0
+        self.m20 = 0
+        self.gini = 0
+        self.asymmetry = 0
+        self.concentration = 0
+        self.smooth=0
     
     def check_data(self):
         pass
@@ -110,9 +113,10 @@ class MorphImg():
         try:
             self._cal_moments_1()
             self._cal_moments_2()
-            self.Gini = self.cal_gini()
-            self.M20 = self.cal_m20()
-            self.Asym = self._calculate_asymm()
+            self.gini = self.cal_gini()
+            self.m20 = self.cal_m20()
+            self.asymmetry = self._calculate_asymm()
+            self.concentration = self.cal_concentration()
         except:
             pass
         if self.flag != 0: 
@@ -289,7 +293,38 @@ class MorphImg():
         return self._asymmetry_function(np.array([self._xc_asym, 
                                                   self._yc_asym]),
                                              self._tonemapped)
-    
+
+    def cal_concentration(self):
+        self.r20 = self._radius_at_fraction_of_total_cas(0.2)
+        #self.r50 = self._radius_at_fraction_of_total_cas(0.5)
+        self.r80 = self._radius_at_fraction_of_total_cas(0.8)
+
+        if (self.r20 == -99.0) or (self.r80 == -99.0):
+            C = -99.0  # invalid
+        else:
+            C = 5.0 * np.log10(self.r80 / self.r20)
+
+        return C
+
+    def _radius_at_fraction_of_total_cas(self, fraction):
+        """
+        Specialization of ``_radius_at_fraction_of_total_circ`` for
+        the CAS calculations.
+        """
+        image = self._tonemapped
+        center = (self._xc_asym, self._yc_asym)
+        r_upper = self._petro_extent_cas * self._rpetro_circ_centroid#rpetro_circ
+
+        r, flag = _radius_at_fraction_of_total_circ(image, center, r_upper, fraction)
+        self.flag = max(self.flag, flag)
+
+        if np.isnan(r) or (r <= 0.0):
+            print('[CAS] Invalid radius_at_fraction_of_total.')
+            self.flag = 1
+            r = -99.0  # invalid
+
+        return r        
+                
     #############
     # R petro
     #############
@@ -376,56 +411,6 @@ class MorphImg():
             ratio = circ_annulus_mean_flux / circ_aperture_mean_flux
 
         return ratio - self._eta
-
-    def _rpetro_circ_generic(self, center):
-        """
-        Compute the Petrosian radius for concentric circular apertures.
-
-        Notes
-        -----
-        The so-called "curve of growth" is not always monotonic,
-        e.g., when there is a bright, unlabeled and unmasked
-        secondary source in the image, so we cannot just apply a
-        root-finding algorithm over the full interval.
-        Instead, we proceed in two stages: first we do a coarse,
-        brute-force search for an appropriate interval (that
-        contains a root), and then we apply the root-finder.
-
-        """
-        # Find appropriate range for root finder
-        npoints = 100
-        r_inner = self._annulus_width
-        r_outer = self._diagonal_distance
-        assert r_inner < r_outer
-        dr = (r_outer - r_inner) / float(npoints-1)
-        r_min, r_max = None, None
-        r = r_inner  # initial value
-        while True:
-            if r >= r_outer:
-                print('[rpetro_circ] rpetro larger than cutout.')
-                self.flag = 1
-            curval = self._petrosian_function_circ(r, center)
-            if curval >= 0:
-                r_min = r
-            elif curval < 0:
-                if r_min is None:
-                    print('[rpetro_circ] r_min is not defined yet.')
-                    self.flag = 1
-                    if r >= r_outer:
-                        # If r_min is still undefined at this point, then
-                        # rpetro must be smaller than the annulus width.
-                        print('rpetro_circ < annulus_width! ' +
-                                      'Setting rpetro_circ = annulus_width.')
-                        return r_inner
-                else:
-                    r_max = r
-                    break
-            r += dr
-
-        rpetro_circ = opt.brentq(self._petrosian_function_circ,
-                                 r_min, r_max, args=(center,), xtol=1e-5)
-
-        return rpetro_circ    
     
     @lazyproperty
     def _rpetro_circ_centroid(self):
@@ -437,10 +422,61 @@ class MorphImg():
         center = np.array([self._xc, self._yc])
         return self._rpetro_circ_generic(center)        
 
-            
-            
     def print_props(self):
         props = ['r20', 'r80', 'M20', 'Gini', 'Asym', 'Conc', 'Smooth']
         for prp in props:
             print(prp, getattr(self, prp))
     
+    def _fraction_of_total_function_circ(r, image, center, fraction, total_sum):
+        """
+        Helper function to calculate ``_radius_at_fraction_of_total_circ``.
+        """
+        assert (r >= 0) & (fraction >= 0) & (fraction <= 1) & (total_sum > 0)
+        if r == 0:
+            cur_fraction = 0.0
+        else:
+            ap = photutils.CircularAperture(center, r)
+            # Force flux sum to be positive:
+            ap_sum = np.abs(ap.do_photometry(image, method='exact')[0][0])
+            cur_fraction = ap_sum / total_sum
+
+        return cur_fraction - fraction
+    
+
+        
+    def _radius_at_fraction_of_total_circ(image, center, r_total, fraction):
+        """
+        Return the radius (in pixels) of a concentric circle that
+        contains a given fraction of the light within ``r_total``.
+        """
+        flag = 0  # flag=1 indicates a problem
+
+        ap_total = photutils.CircularAperture(center, r_total)
+
+        total_sum = ap_total.do_photometry(image, method='exact')[0][0]
+        assert total_sum != 0
+        if total_sum < 0:
+            print('[r_circ] Total flux sum is negative.')
+            flag = 1
+            total_sum = np.abs(total_sum)
+
+        # Find appropriate range for root finder
+        npoints = 100
+        r_grid = np.linspace(0.0, r_total, num=npoints)
+        i = 0  # initial value
+        while True:
+            assert i < npoints, 'Root not found within range.'
+            r = r_grid[i]
+            curval = _fraction_of_total_function_circ(
+                r, image, center, fraction, total_sum)
+            if curval <= 0:
+                r_min = r
+            elif curval > 0:
+                r_max = r
+                break
+            i += 1
+
+        r = opt.brentq(_fraction_of_total_function_circ, r_min, r_max,
+                    args=(image, center, fraction, total_sum), xtol=1e-6)
+
+        return r, flag
