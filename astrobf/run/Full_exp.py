@@ -14,6 +14,8 @@ from sklearn import metrics
 from sklearn.cluster import AgglomerativeClustering, AffinityPropagation, Birch, DBSCAN, MeanShift, SpectralClustering
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, f1_score, log_loss
+from sklearn import svm
 
 from astrobf.utils import metrics as mymetrics
 
@@ -83,8 +85,10 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
     
     # Binary classification 
     labels = labeler(result_arr)
-    #print("Label 1 samples {}/{}".format(np.sum(labels), len(result_arr)))
-    #print("cluter_method", cluster_method)
+
+    if not eval_weight == None:
+        eval_weight = catalog[eval_weight]
+    
     if cluster_method == "kmeans":
         clustering = KMeans(init="k-means++", n_clusters=n_clusters, n_init=4,
                         random_state=0)
@@ -94,12 +98,19 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
         clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='average')
     elif cluster_method == 'spectral':
         clustering = SpectralClustering(n_clusters=n_clusters, assign_labels='discretize')
+    elif cluster_method == "SVM":
+        clf = svm.SVC(gamma=1, decision_function_shape='ovr')
+        clf.fit(compact, labels, sample_weight=eval_weight)
+
+        pred = clf.predict(compact)
+        eval_metrics=[f1_score(pred, labels, average='macro')]
+        clustering = None
+        return eval_metrics, clustering
+    
     eval_metrics = bench_clustering(clustering, compact, labels)
-    # Add sample-weightd fowlkes_mallows_score
-    if not eval_weight == None:
-        eval_weight = catalog[eval_weight]
     eval_metrics.append(['sample-weighted FMS', 
-                    mymetrics.fowlkes_mallows_score_w(labels, clustering.labels_, weights=eval_weight)])
+            mymetrics.fowlkes_mallows_score_w(labels, clustering.labels_, weights=eval_weight)])
+    
     if not return_cluster:
         return eval_metrics
     else:
