@@ -70,6 +70,29 @@ def bench_clustering(clu, data, gt_labels):
 
     return results
 
+def bench_classification(pred, labels, weight=None, avg='macro'):
+    """
+    All metrics should scale 0(worst) to 1(best).
+    The first entry will be used as the BO optimization target metric.
+    Others are only for reference.
+    """
+    clf_metrics_hardmax=[
+        (metrics.f1_score, {'sample_weight':weight,'average':'macro'}),
+        (metrics.accuracy_score, {'sample_weight':weight, 'normalize':True}),
+        (metrics.balanced_accuracy_score, {'sample_weight':weight, 'adjusted':True}),
+        #(metrics.average_precision_score, {'sample_weight':weight, 'average':avg}),
+        #(metrics.f1_score, {'sample_weight':weight,'average':'micro'}),
+        (metrics.precision_score, {'sample_weight':weight, 'average':avg}),
+        (metrics.recall_score, {'sample_weight':weight, 'average':avg}),
+        (metrics.jaccard_score, {'sample_weight':weight, 'average':avg})
+        ]
+    clf_metrics_prob = [metrics.brier_score_loss, 
+                        metrics.log_loss, 
+                        ]
+    results = [(m[0].__name__, m[0](pred, labels, **m[1])) for m in clf_metrics_hardmax]
+    
+    return results
+
 def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'concentration'],
           return_cluster=False, cluster_method="ward", eval_weight=None):
     """
@@ -103,7 +126,7 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
         clf.fit(compact, labels, sample_weight=eval_weight)
 
         pred = clf.predict(compact)
-        eval_metrics=f1_score(pred, labels, average='macro')
+        eval_metrics=bench_classification(pred, labels)
         clustering = None
         return eval_metrics, clustering
     
