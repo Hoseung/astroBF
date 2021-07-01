@@ -103,7 +103,7 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
         clf.fit(compact, labels, sample_weight=eval_weight)
 
         pred = clf.predict(compact)
-        eval_metrics=[f1_score(pred, labels, average='macro')]
+        eval_metrics=f1_score(pred, labels, average='macro')
         clustering = None
         return eval_metrics, clustering
     
