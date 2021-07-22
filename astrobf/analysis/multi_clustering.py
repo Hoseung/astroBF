@@ -267,3 +267,37 @@ def get_morph(gals, tmo_params, ind, fields):
 
     #print(result_arr['concentration'])
     return result_arr
+
+
+def run_morph_in_parts(galaxies, catalog, plist, ngroups, fields):
+    """
+    measure morphology parameters of each class and return merged array of results.
+    
+    parameters
+    ----------
+    galaxies:
+        list of Galaxy data set (image, name, slice)
+    catalog:
+        ndarray containing ID, Label (and t-type)
+    plist:
+        list of tmo parameters
+    ngroups:
+        number of groups
+    """
+    assert len(plist) == ngroups, "ngroups and number of TMO parameters don't match"
+    
+    result_list = []
+    for i in range(ngroups):
+        result_list.append(get_morph(galaxies, 
+                                     plist[i], 
+                                     np.where(catalog['label'] == i)[0], 
+                                     fields))
+        if "bad" in result_list[-1]:
+            return "bad"
+
+    # sort
+    result_arr = np.concatenate(result_list)
+    result_arr = result_arr[np.argsort(result_arr['id'])] # Sort first to apply 'searchsorted'
+    inds = result_arr['id'].searchsorted(catalog["ID"])
+    result_arr = result_arr[inds]
+    return result_arr

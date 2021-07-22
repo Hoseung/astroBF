@@ -112,6 +112,7 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
     if not eval_weight == None:
         eval_weight = catalog[eval_weight]
     
+    _classification = False
     if cluster_method == "kmeans":
         clustering = KMeans(init="k-means++", n_clusters=n_clusters, n_init=4,
                         random_state=0)
@@ -122,54 +123,42 @@ def do_ML(result_arr, labeler, catalog, n_clusters=2, fields=['gini', 'm20', 'co
     elif cluster_method == 'spectral':
         clustering = SpectralClustering(n_clusters=n_clusters, assign_labels='discretize')
     elif cluster_method == "SVM":
+        _classification = True
         clf = svm.SVC(gamma=1, decision_function_shape='ovr')
+    
+    if _classification:    
         clf.fit(compact, labels, sample_weight=eval_weight)
 
-        pred = clf.predict(compact)
-        eval_metrics=bench_classification(pred, labels)
-        clustering = None
-        return eval_metrics, clustering
-    
-    eval_metrics = bench_clustering(clustering, compact, labels)
-    eval_metrics.append(['sample-weighted FMS', 
-            mymetrics.fowlkes_mallows_score_w(labels, clustering.labels_, weights=eval_weight)])
-    
-    if not return_cluster:
-        return eval_metrics
+        preds = clf.predict(compact)
+        """
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import StandardScaler
+        pipeline = Pipeline([
+            ('scaler',StandardScaler()),
+            ('clf', svm.SVC(gamma=1, decision_function_shape='ovr'))
+            ])
+
+        # use the pipeline object as you would
+        # a regular classifier
+        pipeline.fit(compact,labels)
+
+
+        preds = pipeline.predict(X_test)
+
+        """
+        eval_metrics=bench_classification(preds, labels)
+        #clustering = None
+        return eval_metrics, preds
     else:
-        return eval_metrics, clustering
+        eval_metrics = bench_clustering(clustering, compact, labels)
+        eval_metrics.append(['sample-weighted FMS', 
+                mymetrics.fowlkes_mallows_score_w(labels, clustering.labels_, weights=eval_weight)])
+        
+        if not return_cluster:
+            return eval_metrics
+        else:
+            return eval_metrics, clustering
 
 
-def run_morph_in_parts(galaxies, catalog, plist, ngroups):
-    """
-    measure morphology parameters of each class and return merged array of results.
-    
-    parameters
-    ----------
-    galaxies:
-        list of Galaxy data set (image, name, slice)
-    catalog:
-        ndarray containing ID, Label (and t-type)
-    plist:
-        list of tmo parameters
-    ngroups:
-        number of groups
-    """
-    assert len(plist) == ngroups, "ngroups and number of TMO parameters don't match"
-    
-    result_list = []
-    for i in range(ngroups):
-        result_list.append(custom_morph.step_simple_morph(galaxies, 
-                                                          plist[i], 
-                                                          np.where(catalog['label'] == i)[0]))
-        if "bad" in result_list[-1]:
-            return "bad"
-
-    # sort
-    result_arr = np.concatenate(result_list)
-    result_arr = result_arr[np.argsort(result_arr['id'])] # Sort first to apply 'searchsorted'
-    inds = result_arr['id'].searchsorted(catalog["ID"])
-    result_arr = result_arr[inds]
-    return result_arr
 
 
