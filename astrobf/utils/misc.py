@@ -1,10 +1,14 @@
 import pandas as pd
 import numpy as np
 
-def load_Nair(fn_cat):
+def load_Nair(fn_cat, verbose=False, field_list=['ID','TT', 'area']):
     """
     The catalog seems to have written low level languages in mind. 
     It's strictly formatted (using white spaces for missing values), making CSV utilities useless.
+
+    NOTE
+    ----
+    'label' is originally 'Tt' field in the paper. But I will just overwrite this field later.
     """
     headings =['ID', 'RA', 'dec', 'zred', 'zred_q', 
             'mg', 'mr', 'Mag_r', 'logLg', 'Rpetro', 
@@ -29,16 +33,16 @@ def load_Nair(fn_cat):
     dat = pd.read_fwf(fn_cat, colspecs=colspecs, 
                     names=headings, header=None)
 
-    with pd.option_context('display.max_rows', 10, 'display.max_columns', None):
-        print (dat)    
+    if verbose:
+        with pd.option_context('display.max_rows', 10, 'display.max_columns', None):
+            print(dat)
 
     # follow result_arr's convention
     dat['ID'] = dat['ID'].apply(lambda x: x.replace('-','m'))
     dat['ID'] = dat['ID'].apply(lambda x: x.replace('+','p'))
     dat = dat.sort_values("ID")
-    cat = dat.to_records(index=False, column_dtypes={'ID':'<U24', 'spID':'<U14', 'RC3':'<U7'})
 
-    return cat
+    return dat[field_list].copy(deep=True)
 
 
 # Array manipulation - all replaced by sklearn preprocessing module :(

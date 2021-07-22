@@ -1,3 +1,4 @@
+import numpy as np
 from time import time
 from sklearn import metrics
 from sklearn.preprocessing import StandardScaler

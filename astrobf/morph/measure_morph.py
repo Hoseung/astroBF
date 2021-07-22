@@ -3,8 +3,7 @@ import re
 import os 
 import pickle
 from astropy.io import fits
-from ..tmo import Mantiuk_Seidel
-import statmorph  # Just temporarily... 
+from ..tmo import Mantiuk_Seidel 
 
 statMorph_fields = ['gini', 'm20', 'concentration', 'asymmetry', 'smoothness', 'intensity', 
     'xc_centroid', 'yc_centroid', 
@@ -20,6 +19,7 @@ statMorph_fields = ['gini', 'm20', 'concentration', 'asymmetry', 'smoothness', '
 
 
 def run_stat_morph_init(fns, out_dir, eps=1e-6):
+    import statmorph
     """
     Run StatMorph for the first time. 
     Dump all 'morph' objects
@@ -78,6 +78,7 @@ def step_stat_morph(all_data,
         an nd array for success, ['bad', sum of flux] list for fail.
         keep both iterable!
     """
+    import statmorph
     fields = statMorph_fields[:6] 
     ngal = len(all_data)
     result_arr = np.zeros(ngal, 

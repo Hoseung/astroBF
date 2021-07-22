@@ -16,13 +16,15 @@ long_description = (here / "README.md").read_text(encoding='utf-8')
 setup(
     name='astrobf',
     version='0.0.1',
+    packages=find_packages(),
     description='Tone mapping for astronomical images',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/Hoseung/astroBF',
     classifiers=['Programming Language :: Python :: 3'],
     python_requires='>=3.7',
-    install_requires=['numpy', 'scikit-image', 'astropy'],
+    install_requires=['numpy', 'scikit-image', 'astropy', 'sklearn', 'matplotlib',
+                      'colour-science', 'ax-platform', 'photutils'],
     extras_require={'dev':[''],
                     'test':['']},
 )

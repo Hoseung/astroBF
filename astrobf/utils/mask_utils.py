@@ -178,7 +178,8 @@ def gmm_mask(img_data,
             verbose = False,
             plot_name = None):
     """
-        compute GMM and return mask and convex hull 
+        compute GMM and return mask and convex hull.
+        Original author: Minsu Shin
     """
     
     width=img_data.shape[0]
