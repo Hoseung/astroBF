@@ -11,6 +11,9 @@ from . import mask_utils
 
 
 def chunks(lst, n):
+    """
+    Splits a list into n chunks
+    """
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
@@ -26,9 +29,11 @@ def run_mask(fns,
             sub_rows=3, 
             eps=1e-6, 
             do_plot=True,
-            do_charm=False,
             **kwargs):
     """
+    Generates masks of a list of galaxy fits images. 
+    
+
 
     Example
     -------
@@ -44,13 +49,6 @@ def run_mask(fns,
     
     # Overwriting safe guard
     _keep_warning = True
-
-    # WNDCHARM Features
-    if do_charm:
-        raise NotImplementedError('WND-Charm is not yet suppored :(')
-        from wcharm.PyImageMatrix import PyImageMatrix
-        from wcharm.FeatureVector import FeatureVector
-        FeatureVectors=[]
 
     for ichunk, sub in enumerate(chunks(fns, sub_rows**2)):
         
@@ -85,7 +83,6 @@ def run_mask(fns,
             
             pickle.dump(mask_new, open(out_dir+f"{img_name}_mask.pickle", "wb"))
             
-            
             if do_plot:
                 ax = axs[isub]
                 img[~mask] = 0
@@ -93,22 +90,6 @@ def run_mask(fns,
                 #ax.imshow(mask, alpha=0.5)
                 #mask_new = mask_hull(mask, ax)
                 ax.text(0.05,0.05, img_name, transform=ax.transAxes)
-            
-            if do_charm:
-                # Each 'matrix' is distinct instance?? 
-                # And numpy_matrix is pointing to matrix..? 
-                matrix = PyImageMatrix()
-                matrix.allocate(img.shape[1], img.shape[0])
-                numpy_matrix = matrix.as_ndarray()
-                numpy_matrix[:] = (img-img.min())/img.ptp()*255
-                # Need to scale to ...?
-                fv = FeatureVector(name='FromNumpyMatrix', long=True, original_px_plane=matrix )# Why not numpy_matrix??
-                # fv == None for now.
-                fv.GenerateFeatures(quiet=False, write_to_disk=True)
-                FeatureVectors.append({img_name:fv.values})
-                
-                stamp = mask_utils.gen_stamp(img, pad=10, aspect_ratio="no", eps=eps)
-                stamp -= (stamp.min() - eps)
                 
         if do_plot:
             plt.tight_layout()
