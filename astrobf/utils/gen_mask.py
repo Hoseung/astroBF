@@ -22,7 +22,7 @@ def load_fits(fn, eps=1e-6):
     hdulist = fits.open(fn)
     # Ensure pixel values are positive
     hdulist[0].data -= (hdulist[0].data.min() - eps) 
-    return hdulist
+    return hdulist[0] # only length-1 list
     
 def run_mask(fns, 
             out_dir='./', 
@@ -79,7 +79,7 @@ def run_mask(fns,
                         print("incorrect choice")
             
             hdulist = load_fits(fn, eps=eps)
-            mask, img, mask_new = mask_utils.gmm_mask(hdulist,**kwargs)
+            mask, img, mask_new = mask_utils.gmm_mask(hdulist.data,**kwargs)
             
             pickle.dump(mask_new, open(out_dir+f"{img_name}_mask.pickle", "wb"))
             
