@@ -32,7 +32,7 @@ def normalized_uncharted(x, hdr_max):
 
 class Generic():
     """
-    by Timothy Lottes, stole from https://github.com/Opioid/tonemapper
+    Generic Filmic tone mapper by Timothy Lottes, stole from https://github.com/Opioid/tonemapper
 
     https://www.gdcvault.com/play/1023512/Advanced-Graphics-Techniques-Tutorial-Day
     http://32ipi028l5q82yhj72224m8j.wpengine.netdna-cdn.com/wp-content/uploads/2016/03/GdcVdrLottes.pdf

@@ -194,17 +194,32 @@ def ext_single_param(parameters, suffix):
     return dict(dd)
 
 
-def gen_tmo_param_sets(ngroups):
+def gen_tmo_param_sets(ngroups, no_numeric=False, 
+                       min1=1.5, min2=1.0, 
+                       max1=8.0, max2=15.0):
+    """
+    generates sets of parameters for Mantiuk_Seidel tone mapper.
+    """
     ax_params = []
     for i in range(ngroups):
         ax_params.append(
-            {"name":f"b{i}", "type":"range", "bounds":[1.5,8.0], "value_type":"float"})
+            {"name":f"b{i}", "type":"range",
+             "bounds":[min1,max1], "value_type":"float"})
         ax_params.append(
-            {"name":f"c{i}", "type":"range", "bounds":[1.5,8.0], "value_type":"float"})
+            {"name":f"c{i}", "type":"range",
+             "bounds":[min1,max1], "value_type":"float"})
         ax_params.append(
-            {"name":f"dl{i}", "type":"range", "bounds":[1.0,15.0], "value_type":"float"})
+            {"name":f"dl{i}", "type":"range",
+             "bounds":[min2,max2], "value_type":"float"})
         ax_params.append(
-            {"name":f"dh{i}", "type":"range", "bounds":[1.0,15.0], "value_type":"float"})
+            {"name":f"dh{i}", "type":"range",
+             "bounds":[min2,max2], "value_type":"float"})
+    if no_numeric:
+        import re 
+
+        for a in ax_params:
+            a['name'] = re.sub("\d+", "", a['name'])
+            
     return ax_params
 
 def gen_bin_n_mask(ngroups):
