@@ -69,11 +69,20 @@ def _fraction_of_total_function_circ(r, image, center, fraction, total_sum):
         cur_fraction = ap_sum / total_sum
 
     return cur_fraction - fraction
+
+
+def finite_log(img):
+    imgl = np.log10(img)
+    ind = np.isfinite(imgl)
+    imgl[~ind] = imgl[ind].min()
+    imgl -= imgl.min()
+    return imgl
+
 class MorphImg():
     """
     No sky background assumed. 
     """
-    def __init__(self, subgal, tmo_param):
+    def __init__(self, subgal, tmo_param=None):
         self._img, self._segmap, self._weight= subgal['data']
         gid = subgal['img_name']
         self.tmo_param = tmo_param
@@ -135,7 +144,10 @@ class MorphImg():
         image[~self._segmap] = np.nan
         image[image < 0] = 0 
         image /= np.nanmax(image) / 1e2
-        self._tonemapped = Mantiuk_Seidel(image, **self.tmo_param)
+        if self.tmo_param is not None:
+            self._tonemapped = Mantiuk_Seidel(image, **self.tmo_param)
+        else:
+            self._tonemapped = finite_log(image)
     
     def _cal_moments_1(self):
         image = self._tonemapped
